@@ -1,6 +1,6 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          garage
+# Provides:          garage-server
 # Required-Start:    $syslog $network
 # Required-Stop:     $syslog
 # Default-Start:     2 3 4 5
@@ -16,15 +16,15 @@
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="Garage Server Service"
-NAME=garage
+NAME=garage-server
 HTTP_ADDR="0.0.0.0:8225"
 PIN=25
 SERVICEVERBOSE=yes
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
-WORKINGDIR=/var/www/garage
+WORKINGDIR=/var/www
 DAEMON=$WORKINGDIR/$NAME
-DAEMON_ARGS="garage-server -pin $PIN -http=$HTTP_ADDR"
+DAEMON_ARGS="-pin=$PIN -http=$HTTP_ADDR"
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
@@ -50,11 +50,11 @@ do_start()
 	#   1 if daemon was already running
 	#   2 if daemon could not be started
 	sh -c "start-stop-daemon --start --quiet --pidfile $PIDFILE --make-pidfile \\
-			--test --chdir $WORKINGDIR --chuid $USER \\
+			--test --chdir $WORKINGDIR \\
 			--exec $DAEMON -- $DAEMON_ARGS > /dev/null \\
 			|| return 1"
 	sh -c "start-stop-daemon --start --quiet --pidfile $PIDFILE --make-pidfile \\
-			--background --chdir $WORKINGDIR --chuid $USER \\
+			--background --chdir $WORKINGDIR \\
 			--exec $DAEMON -- $DAEMON_ARGS \\
 			|| return 2"
 }
