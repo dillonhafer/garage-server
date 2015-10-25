@@ -67,6 +67,7 @@ PIN=25
 Now just install and start the service:
 
 ```bash
+sudo chmod +x /etc/init.d/garage-server
 sudo update-rc.d garage-server defaults
 sudo service garage-server start
 ```
