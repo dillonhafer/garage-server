@@ -1,6 +1,6 @@
 # Garage Server
 
-A server for Raspberry Pi to open a garage door.
+A server for Raspberry Pi to open a garage door. Used by [garage-ios](https://github.com/dillonhafer/garage-ios).
 
 ## Options
 
