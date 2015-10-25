@@ -47,12 +47,12 @@ func verifyTime(decodedJSON []byte) (map[string]int, error) {
 	return payload, nil
 }
 
-func toggleSwitch() (err error) {
+func toggleSwitch(pinNumber int) (err error) {
 	err = rpio.Open()
 	if err != nil {
 		return
 	}
-	pin := rpio.Pin(25)
+	pin := rpio.Pin(pinNumber)
 	pin.Output()
 	pin.High()
 	time.Sleep(1 * time.Second)
@@ -128,7 +128,7 @@ func main() {
 			}
 
 			fmt.Println("Time verified")
-			err = toggleSwitch()
+			err = toggleSwitch(options.pinNumber)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				w.WriteHeader(422)
