@@ -23,11 +23,19 @@ A server for Raspberry Pi to open a garage door.
 
 #### 1. Download garage-server
 
+**Install from source**
+
 Make sure [go](https://golang.org/) is installed on your Raspberry Pi and then you can use `go get` for installation:
 
 ```bash
 go get github.com/dillonhafer/garage-server
 ```
+
+**Install from binary**
+
+If you don't have/want to setup [go](https://golang.org/) on your Raspberry Pi you can download a pre-built binary. Remember to download the init.d script 😉
+
+Binaries available at https://github.com/dillonhafer/garage-server/releases
 
 #### 2. Create init.d script
 
