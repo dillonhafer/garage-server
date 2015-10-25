@@ -18,7 +18,7 @@ import (
 const Version = "1.0.0"
 
 var options struct {
-	httpAddr  string
+	http      string
 	pinNumber int
 	version   bool
 }
@@ -72,7 +72,7 @@ func main() {
 	}
 
 	flag.IntVar(&options.pinNumber, "pin", 25, "GPIO pin of relay")
-	flag.StringVar(&options.httpAddr, "http", "", "HTTP listen address (e.g. 127.0.0.1:8225)")
+	flag.StringVar(&options.http, "http", "", "HTTP listen address (e.g. 127.0.0.1:8225)")
 	flag.BoolVar(&options.version, "version", false, "print version and exit")
 
 	flag.Parse()
@@ -88,11 +88,11 @@ func main() {
 	}
 
 	serveAddress := "127.0.0.1:8225"
-	if options.httpAddr != "" {
-		serveAddress = options.httpAddr
+	if options.http != "" {
+		serveAddress = options.http
 	}
 	fmt.Fprintln(os.Stderr, "Listening on:", serveAddress)
-	fmt.Fprintln(os.Stderr, "Use `--httpAddr` flag to change the default address")
+	fmt.Fprintln(os.Stderr, "Use `--http` flag to change the default address")
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		var jsonResp struct {
