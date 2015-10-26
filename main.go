@@ -74,16 +74,15 @@ func main() {
 	flag.IntVar(&options.pinNumber, "pin", 25, "GPIO pin of relay")
 	flag.StringVar(&options.http, "http", "", "HTTP listen address (e.g. 127.0.0.1:8225)")
 	flag.BoolVar(&options.version, "version", false, "print version and exit")
-
 	flag.Parse()
-
-	if sharedSecret == "" {
-		println("You did not set GARAGE_SECRET env var")
-		os.Exit(0)
-	}
 
 	if options.version {
 		fmt.Printf("garage-server v%v\n", Version)
+		os.Exit(0)
+	}
+
+	if sharedSecret == "" {
+		println("You did not set GARAGE_SECRET env var")
 		os.Exit(0)
 	}
 
