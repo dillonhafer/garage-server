@@ -35,7 +35,7 @@ go get github.com/dillonhafer/garage-server
 
 If you don't have/want to setup [go](https://golang.org/) on your Raspberry Pi you can download a pre-built binary. Remember to download the init.d script 😉
 
-Binaries available at https://github.com/dillonhafer/garage-server/releases
+Latest binaries available at https://github.com/dillonhafer/garage-server/releases/latest
 
 #### 2. Create init.d script
 
