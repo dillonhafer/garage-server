@@ -9,9 +9,15 @@ A server for Raspberry Pi to open a garage door. Used by [garage-ios](https://gi
     	HTTP listen address (e.g. 127.0.0.1:8225)
   -pin int
     	GPIO pin of relay (default 25)
+  -cert string
+    	SSL certificate path (e.g. /ssl/example.com.cert)
+  -key string
+    	SSL certificate key (e.g. /ssl/example.com.key)
   -version
     	print version and exit
 ```
+
+NOTE: Providing a cert and key will infer the use of TLS
 
 ## Installation Instructions
 
