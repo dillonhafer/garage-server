@@ -20,6 +20,8 @@ const Version = "1.1.1"
 var options struct {
 	http      string
 	pinNumber int
+	cert      string
+	key       string
 	version   bool
 }
 
@@ -125,6 +127,8 @@ func main() {
 
 	flag.IntVar(&options.pinNumber, "pin", 25, "GPIO pin of relay")
 	flag.StringVar(&options.http, "http", "", "HTTP listen address (e.g. 127.0.0.1:8225)")
+	flag.StringVar(&options.cert, "cert", "", "SSL certificate path (e.g. /ssl/example.com.cert)")
+	flag.StringVar(&options.key, "key", "", "SSL certificate key (e.g. /ssl/example.com.key)")
 	flag.BoolVar(&options.version, "version", false, "print version and exit")
 	flag.Parse()
 
@@ -142,12 +146,21 @@ func main() {
 	if options.http != "" {
 		serveAddress = options.http
 	}
-	fmt.Fprintln(os.Stderr, "Listening on:", serveAddress)
-	fmt.Fprintln(os.Stderr, "Use `--http` flag to change the default address")
 
 	http.HandleFunc("/", Relay)
 
-	err := http.ListenAndServe(serveAddress, nil)
+	fmt.Fprintln(os.Stderr, "=> Booting Garage Server ", Version)
+	fmt.Fprintln(os.Stderr, "=> Run `garage-server -h` for more startup options")
+	fmt.Fprintln(os.Stderr, "=> Ctrl-C to shutdown server")
+	var err error
+	if options.key != "" && options.cert != "" {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("* Listening on https://%s", serveAddress))
+		err = http.ListenAndServeTLS(serveAddress, options.cert, options.key, nil)
+	} else {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("* Listening on http://%s", serveAddress))
+		err = http.ListenAndServe(serveAddress, nil)
+	}
+
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
