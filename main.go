@@ -65,6 +65,58 @@ type AppRequest struct {
 	Signature string `json:"signature"`
 }
 
+func Relay(w http.ResponseWriter, r *http.Request) {
+	var jsonResp struct {
+		Text string `json:"status"`
+	}
+	jsonResp.Text = "signal received"
+
+	decoder := json.NewDecoder(r.Body)
+	var appRequest AppRequest
+	err := decoder.Decode(&appRequest)
+	if err != nil {
+		panic("Could Not Decode JSON")
+	}
+
+	signature := appRequest.Signature
+	decodedSignature, err := base64.URLEncoding.DecodeString(signature)
+	if err != nil {
+		panic(err)
+	}
+
+	data := appRequest.Data
+	decodedJSON, err := base64.URLEncoding.DecodeString(data)
+	if err != nil {
+		panic(err)
+	}
+
+	verified := CheckMAC(decodedJSON, decodedSignature)
+	if verified {
+		fmt.Println("Signature verified")
+		_, err := verifyTime(decodedJSON)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("Time verified")
+		err = toggleSwitch(options.pinNumber)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			w.WriteHeader(422)
+			jsonResp.Text = fmt.Sprintf("%s", err)
+		}
+	} else {
+		w.WriteHeader(422)
+		jsonResp.Text = fmt.Sprintf("%s", "Invalid signature")
+	}
+
+	message, err := json.Marshal(jsonResp)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
+	w.Write(message)
+}
+
 func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage:  %s [options]\n", os.Args[0])
@@ -93,57 +145,7 @@ func main() {
 	fmt.Fprintln(os.Stderr, "Listening on:", serveAddress)
 	fmt.Fprintln(os.Stderr, "Use `--http` flag to change the default address")
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		var jsonResp struct {
-			Text string `json:"status"`
-		}
-		jsonResp.Text = "signal received"
-
-		decoder := json.NewDecoder(r.Body)
-		var appRequest AppRequest
-		err := decoder.Decode(&appRequest)
-		if err != nil {
-			panic("Could Not Decode JSON")
-		}
-
-		signature := appRequest.Signature
-		decodedSignature, err := base64.URLEncoding.DecodeString(signature)
-		if err != nil {
-			panic(err)
-		}
-
-		data := appRequest.Data
-		decodedJSON, err := base64.URLEncoding.DecodeString(data)
-		if err != nil {
-			panic(err)
-		}
-
-		verified := CheckMAC(decodedJSON, decodedSignature)
-		if verified {
-			fmt.Println("Signature verified")
-			_, err := verifyTime(decodedJSON)
-			if err != nil {
-				panic(err)
-			}
-
-			fmt.Println("Time verified")
-			err = toggleSwitch(options.pinNumber)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				w.WriteHeader(422)
-				jsonResp.Text = fmt.Sprintf("%s", err)
-			}
-		} else {
-			w.WriteHeader(422)
-			jsonResp.Text = fmt.Sprintf("%s", "Invalid signature")
-		}
-
-		message, err := json.Marshal(jsonResp)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-		}
-		w.Write(message)
-	})
+	http.HandleFunc("/", Relay)
 
 	err := http.ListenAndServe(serveAddress, nil)
 	if err != nil {
