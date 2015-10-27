@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/hmac"
 	"crypto/sha512"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -12,6 +11,7 @@ import (
 	"github.com/stianeikeland/go-rpio"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -27,26 +27,20 @@ var options struct {
 
 var sharedSecret = os.Getenv("GARAGE_SECRET")
 
-func CheckMAC(message, messageMAC []byte) bool {
+func verifySignature(timestamp int, signature []byte) bool {
 	mac := hmac.New(sha512.New, []byte(sharedSecret))
-	mac.Write(message)
+	mac.Write([]byte(strconv.Itoa(timestamp)))
 	expectedMAC := []byte(hex.EncodeToString(mac.Sum(nil)))
-	return hmac.Equal(messageMAC, expectedMAC)
+	return hmac.Equal(signature, expectedMAC)
 }
 
-func verifyTime(decodedJSON []byte) (map[string]int, error) {
-	payload := make(map[string]int)
-	err := json.Unmarshal(decodedJSON, &payload)
-	if err != nil {
-		return nil, err
+func verifyTime(timestamp int) (int, error) {
+	time64 := int64(timestamp)
+	timeSinceRequest := time.Now().Unix() - time64
+	if timeSinceRequest > 10 {
+		return -1, errors.New("Timestamp is too far in the past")
 	}
-
-	time64 := int64(payload["timestamp"])
-	if (time.Now().Unix() - time64) > 30 {
-		return nil, errors.New("Timestamp is too far in the past")
-	}
-
-	return payload, nil
+	return timestamp, nil
 }
 
 func toggleSwitch(pinNumber int) (err error) {
@@ -63,8 +57,8 @@ func toggleSwitch(pinNumber int) (err error) {
 }
 
 type AppRequest struct {
-	Data      string `json:"data"`
-	Signature string `json:"signature"`
+	Timestamp int    `json:"timestamp"`
+	Signature []byte `json:"signature"`
 }
 
 func Relay(w http.ResponseWriter, r *http.Request) {
@@ -77,27 +71,17 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 	var appRequest AppRequest
 	err := decoder.Decode(&appRequest)
 	if err != nil {
-		panic("Could Not Decode JSON")
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 
-	signature := appRequest.Signature
-	decodedSignature, err := base64.URLEncoding.DecodeString(signature)
-	if err != nil {
-		panic(err)
-	}
-
-	data := appRequest.Data
-	decodedJSON, err := base64.URLEncoding.DecodeString(data)
-	if err != nil {
-		panic(err)
-	}
-
-	verified := CheckMAC(decodedJSON, decodedSignature)
+	verified := verifySignature(appRequest.Timestamp, appRequest.Signature)
 	if verified {
 		fmt.Println("Signature verified")
-		_, err := verifyTime(decodedJSON)
+		_, err := verifyTime(appRequest.Timestamp)
 		if err != nil {
-			panic(err)
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
 		}
 
 		fmt.Println("Time verified")
@@ -108,7 +92,7 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 			jsonResp.Text = fmt.Sprintf("%s", err)
 		}
 	} else {
-		w.WriteHeader(422)
+		w.WriteHeader(401)
 		jsonResp.Text = fmt.Sprintf("%s", "Invalid signature")
 	}
 
@@ -116,6 +100,7 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
+
 	w.Write(message)
 }
 
@@ -139,7 +124,7 @@ func main() {
 
 	if sharedSecret == "" {
 		println("You did not set GARAGE_SECRET env var")
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	serveAddress := "127.0.0.1:8225"
