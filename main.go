@@ -34,9 +34,8 @@ func verifySignature(timestamp int, signature []byte) bool {
 	return hmac.Equal(signature, expectedMAC)
 }
 
-func verifyTime(timestamp int) (int, error) {
-	time64 := int64(timestamp)
-	timeSinceRequest := time.Now().Unix() - time64
+func verifyTime(timestamp int64) (int64, error) {
+	timeSinceRequest := time.Now().Unix() - timestamp
 	if timeSinceRequest > 10 {
 		return -1, errors.New("Timestamp is too far in the past")
 	}
@@ -59,7 +58,7 @@ func toggleSwitch(pinNumber int) (err error) {
 }
 
 type ClientRequest struct {
-	Timestamp int `json:"timestamp"`
+	timestamp int64 `json:"timestamp"`
 }
 
 func Relay(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +78,7 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 	verified := verifySignature(clientRequest.Timestamp, clientRequest.Signature)
 	if verified {
 		fmt.Println("Signature verified")
-		_, err := verifyTime(clientRequest.Timestamp)
+		_, err := verifyTime(clientRequest.timestamp)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
