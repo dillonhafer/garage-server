@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/hex"
@@ -11,7 +12,6 @@ import (
 	"github.com/stianeikeland/go-rpio"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -27,9 +27,9 @@ var options struct {
 
 var sharedSecret = os.Getenv("GARAGE_SECRET")
 
-func verifySignature(timestamp int, signature []byte) bool {
+func verifySignature(signedText []byte, signature []byte) bool {
 	mac := hmac.New(sha512.New, []byte(sharedSecret))
-	mac.Write([]byte(strconv.Itoa(timestamp)))
+	mac.Write(signedText)
 	expectedMAC := []byte(hex.EncodeToString(mac.Sum(nil)))
 	return hmac.Equal(signature, expectedMAC)
 }
@@ -62,6 +62,11 @@ type ClientRequest struct {
 }
 
 func Relay(w http.ResponseWriter, r *http.Request) {
+	signature := []byte(r.Header.Get("signature"))
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(r.Body)
+	body := buf.Bytes()
+
 	var jsonResp struct {
 		Text string `json:"status"`
 	}
@@ -75,7 +80,7 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 		os.Exit(1)
 	}
 
-	verified := verifySignature(clientRequest.Timestamp, clientRequest.Signature)
+	verified := verifySignature(body, signature)
 	if verified {
 		fmt.Println("Signature verified")
 		_, err := verifyTime(clientRequest.timestamp)
