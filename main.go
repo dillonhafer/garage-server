@@ -56,9 +56,8 @@ func toggleSwitch(pinNumber int) (err error) {
 	return nil
 }
 
-type AppRequest struct {
-	Timestamp int    `json:"timestamp"`
-	Signature []byte `json:"signature"`
+type ClientRequest struct {
+	Timestamp int `json:"timestamp"`
 }
 
 func Relay(w http.ResponseWriter, r *http.Request) {
@@ -68,17 +67,17 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 	jsonResp.Text = "signal received"
 
 	decoder := json.NewDecoder(r.Body)
-	var appRequest AppRequest
-	err := decoder.Decode(&appRequest)
+	var clientRequest ClientRequest
+	err := decoder.Decode(&clientRequest)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 
-	verified := verifySignature(appRequest.Timestamp, appRequest.Signature)
+	verified := verifySignature(clientRequest.Timestamp, clientRequest.Signature)
 	if verified {
 		fmt.Println("Signature verified")
-		_, err := verifyTime(appRequest.Timestamp)
+		_, err := verifyTime(clientRequest.Timestamp)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
