@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha512"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -58,11 +59,16 @@ func toggleSwitch(pinNumber int) (err error) {
 }
 
 type ClientRequest struct {
-	timestamp int64 `json:"timestamp"`
+	Timestamp int64 `json:"timestamp"`
 }
 
 func Relay(w http.ResponseWriter, r *http.Request) {
-	signature := []byte(r.Header.Get("signature"))
+	header := r.Header.Get("signature")
+	signature, err := base64.URLEncoding.DecodeString(header)
+	if err != nil {
+		panic(err)
+	}
+
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(r.Body)
 	body := buf.Bytes()
@@ -72,24 +78,26 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonResp.Text = "signal received"
 
-	decoder := json.NewDecoder(r.Body)
-	var clientRequest ClientRequest
-	err := decoder.Decode(&clientRequest)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
 	verified := verifySignature(body, signature)
 	if verified {
 		fmt.Println("Signature verified")
-		_, err := verifyTime(clientRequest.timestamp)
+
+		// Verify time
+		var clientRequest ClientRequest
+		err := json.Unmarshal([]byte(body), &clientRequest)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+			return
 		}
 
+		_, err = verifyTime(clientRequest.Timestamp)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return
+		}
 		fmt.Println("Time verified")
+
+		// Toggle switch
 		err = toggleSwitch(options.pinNumber)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -98,6 +106,7 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		w.WriteHeader(401)
+		println(fmt.Sprintf("Invalid signature:%s", signature))
 		jsonResp.Text = fmt.Sprintf("%s", "Invalid signature")
 	}
 
@@ -105,7 +114,6 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
-
 	w.Write(message)
 }
 
