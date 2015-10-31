@@ -17,7 +17,7 @@ A server for Raspberry Pi to open a garage door. Used by [garage-ios](https://gi
     	print version and exit
 ```
 
-NOTE: Providing a cert and key will infer the use of TLS
+*NOTE: Providing a cert and key will infer the use of TLS*
 
 ## Installation Instructions
 
