@@ -19,12 +19,13 @@ DESC="Garage Server Service"
 NAME=garage-server
 HTTP_ADDR="0.0.0.0:8225"
 PIN=25
+STATUS_PIN=10
 SERVICEVERBOSE=yes
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 WORKINGDIR=/var/www
 DAEMON=$WORKINGDIR/$NAME
-DAEMON_ARGS="-pin=$PIN -http=$HTTP_ADDR"
+DAEMON_ARGS="-pin=$PIN -status-pin=$STATUS_PIN -http=$HTTP_ADDR"
 
 # Remember to set a very strong secret token (e.g. ad23384951c79a42b898e273580564d90e4eee22ad2474cf67475f323817a9ed7640a)
 # DO NOT USE the above secret. It's an example only.
