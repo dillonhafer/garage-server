@@ -62,6 +62,18 @@ type ClientRequest struct {
 	Timestamp int64 `json:"timestamp"`
 }
 
+func GetVersion(w http.ResponseWriter, r *http.Request) {
+	var jsonResp struct {
+		Text string `json:"version"`
+	}
+	jsonResp.Text = Version
+	message, err := json.Marshal(jsonResp)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
+	w.Write(message)
+}
+
 func Relay(w http.ResponseWriter, r *http.Request) {
 	header := r.Header.Get("signature")
 	signature, err := base64.URLEncoding.DecodeString(header)
@@ -146,6 +158,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", Relay)
+	http.HandleFunc("/version", GetVersion)
 
 	fmt.Fprintln(os.Stderr, "=> Booting Garage Server ", Version)
 	fmt.Fprintln(os.Stderr, "=> Run `garage-server -h` for more startup options")
