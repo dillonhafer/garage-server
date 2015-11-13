@@ -19,11 +19,12 @@ import (
 const Version = "3.1.0"
 
 var options struct {
-	http      string
-	pinNumber int
-	cert      string
-	key       string
-	version   bool
+	http            string
+	pinNumber       int
+	statusPinNumber int
+	cert            string
+	key             string
+	version         bool
 }
 
 var sharedSecret = os.Getenv("GARAGE_SECRET")
@@ -60,6 +61,43 @@ func toggleSwitch(pinNumber int) (err error) {
 
 type ClientRequest struct {
 	Timestamp int64 `json:"timestamp"`
+}
+
+func CheckStatus(pinNumber int) (state string, err error) {
+	err = rpio.Open()
+	if err != nil {
+		return
+	}
+	defer rpio.Close()
+
+	pin := rpio.Pin(pinNumber)
+
+	status := "open"
+	if pin.Read() == 0 {
+		status = "closed"
+	}
+
+	return status, err
+}
+
+func DoorStatus(w http.ResponseWriter, r *http.Request) {
+	var jsonResp struct {
+		Text string `json:"door_status"`
+	}
+
+	status, err := CheckStatus(options.statusPinNumber)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		w.WriteHeader(422)
+		jsonResp.Text = fmt.Sprintf("%s", err)
+	}
+
+	jsonResp.Text = status
+	message, err := json.Marshal(jsonResp)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
+	w.Write(message)
 }
 
 func GetVersion(w http.ResponseWriter, r *http.Request) {
@@ -136,6 +174,7 @@ func main() {
 	}
 
 	flag.IntVar(&options.pinNumber, "pin", 25, "GPIO pin of relay")
+	flag.IntVar(&options.statusPinNumber, "status pin", 10, "GPIO pin of reed switch")
 	flag.StringVar(&options.http, "http", "", "HTTP listen address (e.g. 127.0.0.1:8225)")
 	flag.StringVar(&options.cert, "cert", "", "SSL certificate path (e.g. /ssl/example.com.cert)")
 	flag.StringVar(&options.key, "key", "", "SSL certificate key (e.g. /ssl/example.com.key)")
@@ -158,6 +197,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", Relay)
+	http.HandleFunc("/status", DoorStatus)
 	http.HandleFunc("/version", GetVersion)
 
 	fmt.Fprintln(os.Stderr, "=> Booting Garage Server ", Version)
