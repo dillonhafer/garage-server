@@ -174,7 +174,7 @@ func main() {
 	}
 
 	flag.IntVar(&options.pinNumber, "pin", 25, "GPIO pin of relay")
-	flag.IntVar(&options.statusPinNumber, "status pin", 10, "GPIO pin of reed switch")
+	flag.IntVar(&options.statusPinNumber, "status-pin", 10, "GPIO pin of reed switch")
 	flag.StringVar(&options.http, "http", "", "HTTP listen address (e.g. 127.0.0.1:8225)")
 	flag.StringVar(&options.cert, "cert", "", "SSL certificate path (e.g. /ssl/example.com.cert)")
 	flag.StringVar(&options.key, "key", "", "SSL certificate key (e.g. /ssl/example.com.key)")
