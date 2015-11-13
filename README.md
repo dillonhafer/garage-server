@@ -9,7 +9,7 @@ A server for Raspberry Pi to open a garage door. Used by [garage-ios](https://gi
     	HTTP listen address (e.g. 127.0.0.1:8225)
   -pin int
     	GPIO pin of relay (default 25)
-  -status pin int
+  -status-pin int
       GPIO pin of reed switch (default 10)
   -cert string
     	SSL certificate path (e.g. /ssl/example.com.cert)
