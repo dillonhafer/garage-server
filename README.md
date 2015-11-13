@@ -9,6 +9,8 @@ A server for Raspberry Pi to open a garage door. Used by [garage-ios](https://gi
     	HTTP listen address (e.g. 127.0.0.1:8225)
   -pin int
     	GPIO pin of relay (default 25)
+  -status pin int
+      GPIO pin of reed switch (default 10)
   -cert string
     	SSL certificate path (e.g. /ssl/example.com.cert)
   -key string
@@ -76,6 +78,7 @@ Pi is configured to use.
 
 HTTP_ADDR="0.0.0.0:8225"
 PIN=25
+STATUS_PIN=10
 ```
 
 Now just install and start the service:
