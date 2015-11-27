@@ -2,6 +2,12 @@
 
 A server for Raspberry Pi to open a garage door. Used by [garage-ios](https://github.com/dillonhafer/garage-ios).
 
+Hardware I used for project:
+
+1. [Magnetic Reed Switch](http://amzn.to/1XuUrV9) (Optional. Used for door status)
+2. [Relay Shield Module](http://amzn.to/1NRZf1R)
+
+I really like the above relay because when the power is disconnected and restored *(i.e. power goes out in the middle of the night)* the relay will remain off. That way a power outage won't open your garage door.
 ## Options
 
 ```
