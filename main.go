@@ -47,14 +47,13 @@ func verifyTime(timestamp int64) (int64, error) {
 func toggleSwitch(pinNumber int) (err error) {
 	err = rpio.Open()
 	if err != nil {
-		return
+		return err
 	}
 	defer rpio.Close()
 
 	pin := rpio.Pin(pinNumber)
 	pin.Output()
 	pin.Low()
-	time.Sleep(500 * time.Millisecond)
 	pin.High()
 	return nil
 }
