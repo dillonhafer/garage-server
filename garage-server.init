@@ -16,6 +16,8 @@
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="Garage Server Service"
+TLS_CERT=/path/to/cert/garage.chained.cert
+TLS_KEY=/path/to/key/garage.key
 NAME=garage-server
 HTTP_ADDR="0.0.0.0:8225"
 PIN=25
@@ -25,10 +27,13 @@ PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 WORKINGDIR=/var/www
 DAEMON=$WORKINGDIR/$NAME
-DAEMON_ARGS="-pin=$PIN -status-pin=$STATUS_PIN -http=$HTTP_ADDR"
+DAEMON_ARGS="-pin=$PIN -status-pin=$STATUS_PIN -http=$HTTP_ADDR -cert=$TLS_CERT -key=$TLS_KEY"
 
-# Remember to set a very strong secret token (e.g. ad23384951c79a42b898e273580564d90e4eee22ad2474cf67475f323817a9ed7640a)
+# Remember to set a very strong secret token
+#   (e.g. ad23384951c79a42b898e273580564d90e4eee22ad2474cf67475f323817a9ed7640a)
 # DO NOT USE the above secret. It's an example only.
+
+# Uncomment the next line !!
 # GARAGE_SECRET=ad23384951c79a42b898e273580564d90e4eee22ad2474cf67475f323817a9ed7640a
 
 # Read configuration variable file if it is present
@@ -50,18 +55,20 @@ DAEMON_ARGS="-pin=$PIN -status-pin=$STATUS_PIN -http=$HTTP_ADDR"
 #
 do_start()
 {
-	# Return
+  # Return
 	#   0 if daemon has been started
 	#   1 if daemon was already running
 	#   2 if daemon could not be started
-	sh -c "GARAGE_SECRET=$GARAGE_SECRET start-stop-daemon --start --quiet --pidfile $PIDFILE --make-pidfile \\
-			--test --chdir $WORKINGDIR \\
-			--exec $DAEMON -- $DAEMON_ARGS > /dev/null \\
-			|| return 1"
-	sh -c "GARAGE_SECRET=$GARAGE_SECRET start-stop-daemon --start --quiet --pidfile $PIDFILE --make-pidfile \\
-			--background --chdir $WORKINGDIR \\
-			--exec $DAEMON -- $DAEMON_ARGS \\
-			|| return 2"
+	export GARAGE_SECRET=$GARAGE_SECRET
+  start-stop-daemon --start --quiet --pidfile $PIDFILE --make-pidfile \
+  --test --chdir $WORKINGDIR \
+  --startas /bin/bash -- -c "exec $DAEMON $DAEMON_ARGS > /var/log/$NAME.log 2>&1" \
+  || return 1
+
+  start-stop-daemon --start --quiet --pidfile $PIDFILE --make-pidfile \
+  --background --chdir $WORKINGDIR \
+  --startas /bin/bash -- -c "exec $DAEMON $DAEMON_ARGS > /var/log/$NAME.log 2>&1" \
+  || return 2
 }
 
 #
