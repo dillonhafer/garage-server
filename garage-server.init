@@ -62,12 +62,12 @@ do_start()
 	export GARAGE_SECRET=$GARAGE_SECRET
   start-stop-daemon --start --quiet --pidfile $PIDFILE --make-pidfile \
   --test --chdir $WORKINGDIR \
-  --startas /bin/bash -- -c "exec $DAEMON $DAEMON_ARGS > /var/log/$NAME.log 2>&1" \
+  --startas /bin/bash -- -c "exec $DAEMON $DAEMON_ARGS >> /var/log/$NAME.log 2>&1" \
   || return 1
 
   start-stop-daemon --start --quiet --pidfile $PIDFILE --make-pidfile \
   --background --chdir $WORKINGDIR \
-  --startas /bin/bash -- -c "exec $DAEMON $DAEMON_ARGS > /var/log/$NAME.log 2>&1" \
+  --startas /bin/bash -- -c "exec $DAEMON $DAEMON_ARGS >> /var/log/$NAME.log 2>&1" \
   || return 2
 }
 
