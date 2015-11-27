@@ -53,13 +53,21 @@ func toggleSwitch(pinNumber int) (err error) {
 	if err != nil {
 		return err
 	}
-	defer rpio.Close()
-
 	pin := rpio.Pin(pinNumber)
 	pin.Output()
+
 	pin.Low()
+	rpio.Close()
+
 	time.Sleep(100 * time.Millisecond)
+
+	err = rpio.Open()
+	if err != nil {
+		return err
+	}
 	pin.High()
+	rpio.Close()
+
 	return nil
 }
 
