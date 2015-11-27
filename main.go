@@ -29,6 +29,10 @@ var options struct {
 
 var sharedSecret = os.Getenv("GARAGE_SECRET")
 
+func logHandler(event string) {
+	fmt.Fprintln(os.Stdout, event, "-", time.Now())
+}
+
 func verifySignature(signedText []byte, signature []byte) bool {
 	mac := hmac.New(sha512.New, []byte(sharedSecret))
 	mac.Write(signedText)
@@ -101,6 +105,7 @@ func DoorStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetVersion(w http.ResponseWriter, r *http.Request) {
+	logHandler("VERSION")
 	var jsonResp struct {
 		Text string `json:"version"`
 	}
@@ -148,6 +153,7 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Time verified")
 
 		// Toggle switch
+		logHandler("TOGGLE DOOR")
 		err = toggleSwitch(options.pinNumber)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
