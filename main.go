@@ -143,8 +143,6 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 
 	verified := verifySignature(body, signature)
 	if verified {
-		fmt.Println("Signature verified")
-
 		// Verify time
 		var clientRequest ClientRequest
 		err := json.Unmarshal([]byte(body), &clientRequest)
@@ -158,7 +156,6 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(os.Stderr, err)
 			return
 		}
-		fmt.Println("Time verified")
 
 		// Toggle switch
 		logHandler("TOGGLE DOOR")
@@ -170,7 +167,7 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		w.WriteHeader(401)
-		println(fmt.Sprintf("Invalid signature:%s", signature))
+		logHandler(fmt.Sprintf("Invalid signature: %s", signature))
 		jsonResp.Text = fmt.Sprintf("%s", "Invalid signature")
 	}
 
