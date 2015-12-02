@@ -18,9 +18,9 @@ I really like the above relay because when the power is disconnected and restore
   -status-pin int
     	GPIO pin of reed switch (default 10)
   -cert string
-    	SSL certificate path (e.g. /certs/example.com.cert)
+    	TLS certificate path (e.g. /certs/example.com.cert)
   -key string
-    	SSL certificate key (e.g. /certs/example.com.key)
+    	TLS certificate key (e.g. /certs/example.com.key)
   -version
     	print version and exit
 ```
