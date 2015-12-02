@@ -20,7 +20,7 @@ I really like the above relay because when the power is disconnected and restore
   -cert string
     	TLS certificate path (e.g. /certs/example.com.cert)
   -key string
-    	TLS certificate key (e.g. /certs/example.com.key)
+    	TLS key path (e.g. /certs/example.com.key)
   -version
     	print version and exit
 ```
@@ -31,11 +31,11 @@ I really like the above relay because when the power is disconnected and restore
 
 #### Installation Steps Overview:
 
-1. Download garage-server
-2. Create init.d script
-3. Configure init.d script
+1. **[Download garage-server](#download)**
+2. **[Create init.d script](#create)**
+3. **[Configure init.d script](#configure)**
 
-#### 1. Download garage-server
+#### Download garage-server
 
 **Install from source**
 
@@ -51,7 +51,7 @@ If you don't have/want to setup [go](https://golang.org/) on your Raspberry Pi y
 
 Latest binaries available at https://github.com/dillonhafer/garage-server/releases/latest
 
-#### 2. Create init.d script
+#### Create init.d script
 
 Simply copy the init.d script from the src directory.
 
@@ -59,7 +59,7 @@ Simply copy the init.d script from the src directory.
 cp $GOPATH/src/github.com/dillonhafer/garage-server/garage-server.init /etc/init.d/garage-server
 ```
 
-#### 3. Configure init.d script
+#### Configure init.d script
 
 The last thing to do is to configure your init.d script to reflect your Raspberry Pi's configuration.
 
