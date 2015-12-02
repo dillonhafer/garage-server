@@ -31,9 +31,9 @@ I really like the above relay because when the power is disconnected and restore
 
 #### Installation Steps Overview:
 
-1. **[Download garage-server](#download)**
-2. **[Create init.d script](#create)**
-3. **[Configure init.d script](#configure)**
+1. **[Download garage-server](#download-garage-server)**
+2. **[Create init.d script](#create-initd-script)**
+3. **[Configure init.d script](#configure-initd-script)**
 
 #### Download garage-server
 
