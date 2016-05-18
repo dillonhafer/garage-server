@@ -14,8 +14,10 @@ import (
 	"github.com/mcuadros/go-version"
 	"github.com/stianeikeland/go-rpio"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -61,7 +63,14 @@ func latestRelease() Release {
 
 func downloadNewRelease(url string) {
 	tokens := strings.Split(url, "/")
-	fileName := "/tmp/" + tokens[len(tokens)-1]
+	fileName := tokens[len(tokens)-1]
+
+	dir, err := ioutil.TempDir("", "garage-server")
+	if err != nil {
+		fmt.Println("Error while creating tmp file", fileName, "-", err)
+	}
+	fileName = filepath.Join(dir, fileName)
+
 	fmt.Println("Downloading", url, "to", fileName)
 
 	output, err := os.Create(fileName)
