@@ -10,9 +10,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/kardianos/osext"
+	"github.com/mcuadros/go-version"
 	"github.com/stianeikeland/go-rpio"
+	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -27,10 +31,86 @@ var options struct {
 	version         bool
 }
 
+type Assets struct {
+	DownloadUrl string `json:"browser_download_url"`
+}
+
+type Release struct {
+	Version string   `json:"name"`
+	Assets  []Assets `json:"assets"`
+}
+
 var sharedSecret = os.Getenv("GARAGE_SECRET")
 
 func logHandler(event string) {
 	fmt.Fprintln(os.Stdout, event, "-", time.Now())
+}
+
+func latestRelease() Release {
+	url := "https://api.github.com/repos/dillonhafer/garage-server/releases/latest"
+
+	res, _ := http.Get(url)
+	defer res.Body.Close()
+
+	decoder := json.NewDecoder(res.Body)
+	var release Release
+	var _ = decoder.Decode(&release)
+
+	return release
+}
+
+func downloadNewRelease(url string) {
+	tokens := strings.Split(url, "/")
+	fileName := "/tmp/" + tokens[len(tokens)-1]
+	fmt.Println("Downloading", url, "to", fileName)
+
+	output, err := os.Create(fileName)
+	if err != nil {
+		fmt.Println("Error while creating", fileName, "-", err)
+		return
+	}
+	defer output.Close()
+
+	response, err := http.Get(url)
+	if err != nil {
+		fmt.Println("Error while downloading", url, "-", err)
+		return
+	}
+	defer response.Body.Close()
+
+	_, err = io.Copy(output, response.Body)
+	if err != nil {
+		fmt.Println("Error while downloading", url, "-", err)
+		return
+	}
+
+	fmt.Println("Download finished.")
+
+	replaceBinary(fileName)
+}
+
+func replaceBinary(path string) {
+	fmt.Println("Updating server...")
+	filename, _ := osext.Executable()
+	fmt.Println("Copying", path, "to", filename)
+	err := os.Rename(path, filename)
+
+	if err != nil {
+		fmt.Println("Could not copy file:", err)
+		return
+	}
+}
+
+func checkForUpdates() {
+	println("Checking for updates...")
+	release := latestRelease()
+	fmt.Fprintf(os.Stderr, "Current version is: %s - latest version is: %s\n", Version, release.Version)
+
+	if version.Compare(release.Version, Version, ">") {
+		downloadNewRelease(release.Assets[0].DownloadUrl)
+	} else {
+		println("You're up to date!")
+	}
 }
 
 func verifySignature(signedText []byte, signature []byte) bool {
@@ -113,7 +193,7 @@ func DoorStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetVersion(w http.ResponseWriter, r *http.Request) {
-	logHandler("VERSION")
+	logHandler("Version")
 	var jsonResp struct {
 		Text string `json:"version"`
 	}
@@ -191,6 +271,11 @@ func main() {
 	flag.StringVar(&options.key, "key", "", "SSL certificate key (e.g. /ssl/example.com.key)")
 	flag.BoolVar(&options.version, "version", false, "print version and exit")
 	flag.Parse()
+
+	if os.Args[1] == "update" {
+		checkForUpdates()
+		os.Exit(0)
+	}
 
 	if options.version {
 		fmt.Printf("garage-server v%v\n", Version)
