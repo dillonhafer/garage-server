@@ -91,6 +91,13 @@ do_stop()
 	return "$RETVAL"
 }
 
+#
+# Function that updates the daemon/service
+#
+do_update()
+{
+  $DAEMON update && chmod +x $DAEMON
+}
 
 case "$1" in
   start)
@@ -112,6 +119,9 @@ case "$1" in
   status)
 	status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
 	;;
+  update)
+  do_update
+  ;;
   restart|force-reload)
 	log_daemon_msg "Restarting $DESC" "$NAME"
 	do_stop
