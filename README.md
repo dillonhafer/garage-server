@@ -110,6 +110,16 @@ garage-se 3401 root    3u  IPv4   9111      0t0  TCP *:8225 (LISTEN)
 
 That's it! The server is now setup!
 
+## Updates
+
+You can update your server with the latest binary with the `update` command in the `init.d` script.
+
+You can keep your server automatically up-to-date with cron: 
+
+```bash
+@daily /usr/sbin/service garage-server update && /usr/sbin/service garage-server restart
+```
+
 ## License
 
    Copyright 2015 Dillon Hafer
