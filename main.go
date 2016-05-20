@@ -33,24 +33,26 @@ type ClientRequest struct {
 	Timestamp int64 `json:"timestamp"`
 }
 
-func Status(w http.ResponseWriter, r *http.Request) {
-	var jsonResp struct {
-		Text string `json:"door_status"`
-	}
+func CreateStatusHandler(f func(int) (string, error)) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		var jsonResp struct {
+			Text string `json:"door_status"`
+		}
 
-	status, err := CheckDoorStatus(options.statusPinNumber)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		w.WriteHeader(422)
-		jsonResp.Text = fmt.Sprintf("%s", err)
-	}
+		status, err := f(options.statusPinNumber)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			w.WriteHeader(422)
+			jsonResp.Text = fmt.Sprintf("%s", err)
+		}
 
-	jsonResp.Text = status
-	message, err := json.Marshal(jsonResp)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
-	w.Write(message)
+		jsonResp.Text = status
+		message, err := json.Marshal(jsonResp)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+		w.Write(message)
+	})
 }
 
 func AppVersion(w http.ResponseWriter, r *http.Request) {
@@ -154,6 +156,7 @@ func main() {
 		serveAddress = options.http
 	}
 
+	Status := CreateStatusHandler(CheckDoorStatus)
 	http.HandleFunc("/", Relay)
 	http.HandleFunc("/status", Status)
 	http.HandleFunc("/version", AppVersion)
