@@ -1,9 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"encoding/base64"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
@@ -23,63 +20,6 @@ var options struct {
 }
 
 var SharedSecret = os.Getenv("GARAGE_SECRET")
-
-type ClientRequest struct {
-	Timestamp int64 `json:"timestamp"`
-}
-
-func Relay(w http.ResponseWriter, r *http.Request) {
-	header := r.Header.Get("signature")
-	signature, err := base64.URLEncoding.DecodeString(header)
-	if err != nil {
-		panic(err)
-	}
-
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(r.Body)
-	body := buf.Bytes()
-
-	var jsonResp struct {
-		Text string `json:"status"`
-	}
-	jsonResp.Text = "signal received"
-
-	verified := VerifySignature(body, signature)
-	if verified {
-		// Verify time
-		var clientRequest ClientRequest
-		err := json.Unmarshal([]byte(body), &clientRequest)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-
-		_, err = VerifyTime(clientRequest.Timestamp)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-
-		// Toggle switch
-		apiLogHandler("TOGGLE DOOR")
-		err = ToggleSwitch(options.pinNumber, options.sleepTimeout)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			w.WriteHeader(422)
-			jsonResp.Text = fmt.Sprintf("%s", err)
-		}
-	} else {
-		w.WriteHeader(401)
-		apiLogHandler(fmt.Sprintf("Invalid signature: %s", signature))
-		jsonResp.Text = fmt.Sprintf("%s", "Invalid signature")
-	}
-
-	message, err := json.Marshal(jsonResp)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
-	w.Write(message)
-}
 
 func main() {
 	if os.Args[1] == "update" {

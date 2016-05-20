@@ -112,3 +112,26 @@ func TestErrorStatus(t *testing.T) {
 		t.Fatalf("Expected a 422 got %v", writer.Code)
 	}
 }
+
+func TestSuccessfulToggleRelay(t *testing.T) {
+	t.Skip("good signature")
+	t.Skip("verified signature")
+	t.Skip("active time")
+	t.Skip("successful toggle")
+}
+
+func TestBadSignatureRelay(t *testing.T) {
+	t.Skip("bad signature")
+}
+
+func TestUnverifiedSignatureRelay(t *testing.T) {
+	t.Skip("unverified signature")
+}
+
+func TestExpiredRequestRelay(t *testing.T) {
+	t.Skip("expired request")
+}
+
+func TestToggleFailedRelay(t *testing.T) {
+	t.Skip("toggle failed")
+}
