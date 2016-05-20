@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"time"
 )
 
 const Version = "4.4.0"
@@ -24,10 +23,6 @@ var options struct {
 }
 
 var SharedSecret = os.Getenv("GARAGE_SECRET")
-
-func logHandler(event string) {
-	fmt.Fprintln(os.Stdout, event, "-", time.Now())
-}
 
 type ClientRequest struct {
 	Timestamp int64 `json:"timestamp"`
@@ -66,7 +61,7 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Toggle switch
-		logHandler("TOGGLE DOOR")
+		apiLogHandler("TOGGLE DOOR")
 		err = ToggleSwitch(options.pinNumber, options.sleepTimeout)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -75,7 +70,7 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		w.WriteHeader(401)
-		logHandler(fmt.Sprintf("Invalid signature: %s", signature))
+		apiLogHandler(fmt.Sprintf("Invalid signature: %s", signature))
 		jsonResp.Text = fmt.Sprintf("%s", "Invalid signature")
 	}
 

@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 )
 
+func apiLogHandler(event string) {
+	fmt.Fprintln(os.Stdout, event, "-", time.Now())
+}
+
 func AppVersion(w http.ResponseWriter, r *http.Request) {
-	logHandler("Version")
+	apiLogHandler("Version")
 	var jsonResp struct {
 		Text string `json:"version"`
 	}
