@@ -2,15 +2,10 @@ package main
 
 import (
 	"bytes"
-	"crypto/hmac"
-	"crypto/sha512"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
-	"github.com/stianeikeland/go-rpio"
 	"net/http"
 	"os"
 	"time"
@@ -28,78 +23,22 @@ var options struct {
 	version         bool
 }
 
-var sharedSecret = os.Getenv("GARAGE_SECRET")
+var SharedSecret = os.Getenv("GARAGE_SECRET")
 
 func logHandler(event string) {
 	fmt.Fprintln(os.Stdout, event, "-", time.Now())
-}
-
-func verifySignature(signedText []byte, signature []byte) bool {
-	mac := hmac.New(sha512.New, []byte(sharedSecret))
-	mac.Write(signedText)
-	expectedMAC := []byte(hex.EncodeToString(mac.Sum(nil)))
-	return hmac.Equal(signature, expectedMAC)
-}
-
-func verifyTime(timestamp int64) (int64, error) {
-	timeSinceRequest := time.Now().Unix() - timestamp
-	if timeSinceRequest > 10 {
-		return -1, errors.New("Timestamp is too far in the past")
-	}
-	return timestamp, nil
-}
-
-func toggleSwitch(pinNumber int, sleepTimeout int) (err error) {
-	err = rpio.Open()
-	if err != nil {
-		return err
-	}
-	pin := rpio.Pin(pinNumber)
-	pin.Output()
-
-	pin.Low()
-	rpio.Close()
-
-	snooze := time.Duration(sleepTimeout) * time.Millisecond
-	time.Sleep(snooze)
-
-	err = rpio.Open()
-	if err != nil {
-		return err
-	}
-	pin.High()
-	rpio.Close()
-
-	return nil
 }
 
 type ClientRequest struct {
 	Timestamp int64 `json:"timestamp"`
 }
 
-func CheckStatus(pinNumber int) (state string, err error) {
-	err = rpio.Open()
-	if err != nil {
-		return
-	}
-	defer rpio.Close()
-
-	pin := rpio.Pin(pinNumber)
-
-	status := "open"
-	if pin.Read() == 0 {
-		status = "closed"
-	}
-
-	return status, err
-}
-
-func DoorStatus(w http.ResponseWriter, r *http.Request) {
+func Status(w http.ResponseWriter, r *http.Request) {
 	var jsonResp struct {
 		Text string `json:"door_status"`
 	}
 
-	status, err := CheckStatus(options.statusPinNumber)
+	status, err := CheckDoorStatus(options.statusPinNumber)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		w.WriteHeader(422)
@@ -114,7 +53,7 @@ func DoorStatus(w http.ResponseWriter, r *http.Request) {
 	w.Write(message)
 }
 
-func GetVersion(w http.ResponseWriter, r *http.Request) {
+func AppVersion(w http.ResponseWriter, r *http.Request) {
 	logHandler("Version")
 	var jsonResp struct {
 		Text string `json:"version"`
@@ -143,7 +82,7 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonResp.Text = "signal received"
 
-	verified := verifySignature(body, signature)
+	verified := VerifySignature(body, signature)
 	if verified {
 		// Verify time
 		var clientRequest ClientRequest
@@ -153,7 +92,7 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		_, err = verifyTime(clientRequest.Timestamp)
+		_, err = VerifyTime(clientRequest.Timestamp)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return
@@ -161,7 +100,7 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 
 		// Toggle switch
 		logHandler("TOGGLE DOOR")
-		err = toggleSwitch(options.pinNumber, options.sleepTimeout)
+		err = ToggleSwitch(options.pinNumber, options.sleepTimeout)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			w.WriteHeader(422)
@@ -205,7 +144,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if sharedSecret == "" {
+	if SharedSecret == "" {
 		println("You did not set GARAGE_SECRET env var")
 		os.Exit(1)
 	}
@@ -216,8 +155,8 @@ func main() {
 	}
 
 	http.HandleFunc("/", Relay)
-	http.HandleFunc("/status", DoorStatus)
-	http.HandleFunc("/version", GetVersion)
+	http.HandleFunc("/status", Status)
+	http.HandleFunc("/version", AppVersion)
 
 	fmt.Fprintln(os.Stderr, "=> Booting Garage Server ", Version)
 	fmt.Fprintln(os.Stderr, "=> Run `garage-server -h` for more startup options")
