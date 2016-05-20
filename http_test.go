@@ -51,7 +51,7 @@ func TestOpenStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Status := CreateStatusHandler(CreateDummyStatus("open"))
+	Status := CreateDoorStatusHandler(CreateDummyStatus("open"), 0)
 	Status(writer, req)
 
 	if writer.Code != 200 {
@@ -78,7 +78,7 @@ func TestClosedStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Status := CreateStatusHandler(CreateDummyStatus("closed"))
+	Status := CreateDoorStatusHandler(CreateDummyStatus("closed"), 0)
 	Status(writer, req)
 
 	if writer.Code != 200 {
@@ -105,7 +105,7 @@ func TestErrorStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Status := CreateStatusHandler(CreateDummyStatus("error"))
+	Status := CreateDoorStatusHandler(CreateDummyStatus("error"), 0)
 	Status(writer, req)
 
 	if writer.Code != 422 {

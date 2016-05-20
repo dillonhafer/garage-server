@@ -33,13 +33,13 @@ type ClientRequest struct {
 	Timestamp int64 `json:"timestamp"`
 }
 
-func CreateStatusHandler(f func(int) (string, error)) http.HandlerFunc {
+func CreateDoorStatusHandler(doorStatus func(int) (string, error), statusPin int) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var jsonResp struct {
 			Text string `json:"door_status"`
 		}
 
-		status, err := f(options.statusPinNumber)
+		status, err := doorStatus(statusPin)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			w.WriteHeader(422)
@@ -156,7 +156,7 @@ func main() {
 		serveAddress = options.http
 	}
 
-	Status := CreateStatusHandler(CheckDoorStatus)
+	Status := CreateDoorStatusHandler(CheckDoorStatus, options.statusPinNumber)
 	http.HandleFunc("/", Relay)
 	http.HandleFunc("/status", Status)
 	http.HandleFunc("/version", AppVersion)
