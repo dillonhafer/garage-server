@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const Version = "4.2.4"
+const Version = "4.3.0"
 
 var options struct {
 	http            string
