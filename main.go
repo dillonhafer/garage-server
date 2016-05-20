@@ -22,6 +22,7 @@ var options struct {
 	http            string
 	pinNumber       int
 	statusPinNumber int
+	sleepTimeout    int
 	cert            string
 	key             string
 	version         bool
@@ -48,7 +49,7 @@ func verifyTime(timestamp int64) (int64, error) {
 	return timestamp, nil
 }
 
-func toggleSwitch(pinNumber int) (err error) {
+func toggleSwitch(pinNumber int, sleepTimeout int) (err error) {
 	err = rpio.Open()
 	if err != nil {
 		return err
@@ -59,7 +60,8 @@ func toggleSwitch(pinNumber int) (err error) {
 	pin.Low()
 	rpio.Close()
 
-	time.Sleep(100 * time.Millisecond)
+	snooze := time.Duration(sleepTimeout) * time.Millisecond
+	time.Sleep(snooze)
 
 	err = rpio.Open()
 	if err != nil {
@@ -159,7 +161,7 @@ func Relay(w http.ResponseWriter, r *http.Request) {
 
 		// Toggle switch
 		logHandler("TOGGLE DOOR")
-		err = toggleSwitch(options.pinNumber)
+		err = toggleSwitch(options.pinNumber, options.sleepTimeout)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			w.WriteHeader(422)
@@ -191,6 +193,7 @@ func main() {
 
 	flag.IntVar(&options.pinNumber, "pin", 25, "GPIO pin of relay")
 	flag.IntVar(&options.statusPinNumber, "status-pin", 10, "GPIO pin of reed switch")
+	flag.IntVar(&options.sleepTimeout, "sleep", 100, "Time in milliseconds to keep switch closed")
 	flag.StringVar(&options.http, "http", "", "HTTP listen address (e.g. 127.0.0.1:8225)")
 	flag.StringVar(&options.cert, "cert", "", "SSL certificate path (e.g. /ssl/example.com.cert)")
 	flag.StringVar(&options.key, "key", "", "SSL certificate key (e.g. /ssl/example.com.key)")

@@ -8,19 +8,22 @@ Hardware I used for project:
 2. [Relay Shield Module](http://amzn.to/1NRZf1R)
 
 I really like the above relay because when the power is disconnected and restored *(i.e. power goes out in the middle of the night)* the relay will remain off. That way a power outage won't open your garage door.
+
 ## Options
 
 ```
-  -http string
-    	HTTP listen address (e.g. 127.0.0.1:8225)
-  -pin int
-    	GPIO pin of relay (default 25)
-  -status-pin int
-    	GPIO pin of reed switch (default 10)
   -cert string
     	TLS certificate path (e.g. /certs/example.com.cert)
+  -http string
+    	HTTP listen address (e.g. 127.0.0.1:8225)
   -key string
     	TLS key path (e.g. /certs/example.com.key)
+  -pin int
+    	GPIO pin of relay (default 25)
+  -sleep int
+      Time in milliseconds to keep switch closed (default 100)
+  -status-pin int
+    	GPIO pin of reed switch (default 10)
   -version
     	print version and exit
 ```
@@ -114,7 +117,7 @@ That's it! The server is now setup!
 
 You can update your server with the latest binary with the `update` command in the `init.d` script.
 
-You can keep your server automatically up-to-date with cron: 
+You can keep your server automatically up-to-date with cron:
 
 ```bash
 @daily /usr/sbin/service garage-server update && /usr/sbin/service garage-server restart
