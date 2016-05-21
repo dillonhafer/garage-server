@@ -53,55 +53,61 @@ type ClientRequest struct {
 	Timestamp int64 `json:"timestamp"`
 }
 
-func Relay(w http.ResponseWriter, r *http.Request) {
-	header := r.Header.Get("signature")
-	signature, err := base64.URLEncoding.DecodeString(header)
-	if err != nil {
-		panic(err)
-	}
-
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(r.Body)
-	body := buf.Bytes()
-
-	var jsonResp struct {
-		Text string `json:"status"`
-	}
-	jsonResp.Text = "signal received"
-
-	verified := VerifySignature(body, signature)
-	if verified {
-		// Verify time
-		var clientRequest ClientRequest
-		err := json.Unmarshal([]byte(body), &clientRequest)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
+func CreateRelayHandler(toggleSwitch func(int, int) error, pinNumber int, sleepTimeout int) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var jsonResp struct {
+			Status string `json:"status"`
 		}
+		jsonResp.Status = "signal received"
 
-		_, err = VerifyTime(clientRequest.Timestamp)
+		header := r.Header.Get("signature")
+		signature, err := base64.URLEncoding.DecodeString(header)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-
-		// Toggle switch
-		apiLogHandler("TOGGLE DOOR")
-		err = ToggleSwitch(options.pinNumber, options.sleepTimeout)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
 			w.WriteHeader(422)
-			jsonResp.Text = fmt.Sprintf("%s", err)
+			jsonResp.Status = fmt.Sprintf("%s", err)
+			return
 		}
-	} else {
-		w.WriteHeader(401)
-		apiLogHandler(fmt.Sprintf("Invalid signature: %s", signature))
-		jsonResp.Text = fmt.Sprintf("%s", "Invalid signature")
-	}
 
-	message, err := json.Marshal(jsonResp)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
-	w.Write(message)
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(r.Body)
+		body := buf.Bytes()
+
+		verified := VerifySignature(body, signature)
+		if verified {
+			// Verify time
+			var clientRequest ClientRequest
+			err := json.Unmarshal([]byte(body), &clientRequest)
+			if err != nil {
+				w.WriteHeader(422)
+				jsonResp.Status = fmt.Sprintf("%s", err)
+				return
+			}
+
+			_, err = VerifyTime(clientRequest.Timestamp)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				w.WriteHeader(422)
+				jsonResp.Status = fmt.Sprintf("%s", err)
+			}
+
+			// Toggle switch
+			apiLogHandler("TOGGLE DOOR")
+			err = toggleSwitch(pinNumber, sleepTimeout)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				w.WriteHeader(500)
+				jsonResp.Status = fmt.Sprintf("%s", err)
+			}
+		} else {
+			w.WriteHeader(401)
+			apiLogHandler(fmt.Sprintf("Invalid signature: %s", signature))
+			jsonResp.Status = "Invalid signature"
+		}
+
+		message, err := json.Marshal(jsonResp)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+		w.Write(message)
+	})
 }

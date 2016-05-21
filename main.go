@@ -57,6 +57,8 @@ func main() {
 	}
 
 	Status := CreateDoorStatusHandler(CheckDoorStatus, options.statusPinNumber)
+	Relay := CreateRelayHandler(ToggleSwitch, options.pinNumber, options.sleepTimeout)
+
 	http.HandleFunc("/", Relay)
 	http.HandleFunc("/status", Status)
 	http.HandleFunc("/version", AppVersion)
