@@ -56,8 +56,9 @@ func main() {
 		serveAddress = options.http
 	}
 
-	Status := CreateDoorStatusHandler(CheckDoorStatus, options.statusPinNumber)
-	Relay := CreateRelayHandler(ToggleSwitch, options.pinNumber, options.sleepTimeout)
+	Relay := CreateRelayHandler(ToggleSwitch, apiLogHandler, options.pinNumber, options.sleepTimeout)
+	Status := CreateDoorStatusHandler(CheckDoorStatus, apiLogHandler, options.statusPinNumber)
+	AppVersion := CreateVersionHandler(apiLogHandler)
 
 	http.HandleFunc("/", Relay)
 	http.HandleFunc("/status", Status)

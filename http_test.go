@@ -47,6 +47,8 @@ func CreateDummyRelay(bad bool) func(int, int) error {
 	}
 }
 
+func DummyLogger(s string) {}
+
 func TestVersion(t *testing.T) {
 	writer := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/version", nil)
@@ -54,6 +56,7 @@ func TestVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	AppVersion := CreateVersionHandler(DummyLogger)
 	AppVersion(writer, req)
 	responseEqual(t, writer.Code, 200)
 
@@ -75,7 +78,7 @@ func TestOpenStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Status := CreateDoorStatusHandler(CreateDummyStatus("open"), 0)
+	Status := CreateDoorStatusHandler(CreateDummyStatus("open"), DummyLogger, 0)
 	Status(writer, req)
 
 	responseEqual(t, writer.Code, 200)
@@ -97,7 +100,7 @@ func TestClosedStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Status := CreateDoorStatusHandler(CreateDummyStatus("closed"), 0)
+	Status := CreateDoorStatusHandler(CreateDummyStatus("closed"), DummyLogger, 0)
 	Status(writer, req)
 
 	responseEqual(t, writer.Code, 200)
@@ -120,7 +123,7 @@ func TestErrorStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Status := CreateDoorStatusHandler(CreateDummyStatus("error"), 0)
+	Status := CreateDoorStatusHandler(CreateDummyStatus("error"), DummyLogger, 0)
 	Status(writer, req)
 
 	responseEqual(t, writer.Code, 422)
@@ -150,7 +153,7 @@ func TestSuccessfulToggleRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Relay := CreateRelayHandler(CreateDummyRelay(false), 0, 1)
+	Relay := CreateRelayHandler(CreateDummyRelay(false), DummyLogger, 0, 1)
 	Relay(writer, req)
 
 	responseEqual(t, writer.Code, 200)
@@ -180,7 +183,7 @@ func TestUnverifiedSignatureRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Relay := CreateRelayHandler(CreateDummyRelay(false), 0, 1)
+	Relay := CreateRelayHandler(CreateDummyRelay(false), DummyLogger, 0, 1)
 	Relay(writer, req)
 
 	responseEqual(t, writer.Code, 401)
@@ -209,7 +212,7 @@ func TestExpiredRequestRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Relay := CreateRelayHandler(CreateDummyRelay(false), 0, 1)
+	Relay := CreateRelayHandler(CreateDummyRelay(false), DummyLogger, 0, 1)
 	Relay(writer, req)
 
 	responseEqual(t, writer.Code, 422)
@@ -238,7 +241,7 @@ func TestToggleFailedRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Relay := CreateRelayHandler(CreateDummyRelay(true), 0, 1)
+	Relay := CreateRelayHandler(CreateDummyRelay(true), DummyLogger, 0, 1)
 	Relay(writer, req)
 
 	responseEqual(t, writer.Code, 500)

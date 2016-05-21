@@ -11,23 +11,24 @@ import (
 )
 
 func apiLogHandler(event string) {
-	fmt.Fprintln(os.Stdout, event, "-", time.Now())
+	fmt.Fprintln(os.Stderr, event, "-", time.Now())
+}
+func CreateVersionHandler(logger func(string)) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		logger("Version")
+		var jsonResp struct {
+			Text string `json:"version"`
+		}
+		jsonResp.Text = Version
+		message, err := json.Marshal(jsonResp)
+		if err != nil {
+			logger(fmt.Sprintf("%s", err))
+		}
+		w.Write(message)
+	})
 }
 
-func AppVersion(w http.ResponseWriter, r *http.Request) {
-	apiLogHandler("Version")
-	var jsonResp struct {
-		Text string `json:"version"`
-	}
-	jsonResp.Text = Version
-	message, err := json.Marshal(jsonResp)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
-	w.Write(message)
-}
-
-func CreateDoorStatusHandler(doorStatus func(int) (string, error), statusPin int) http.HandlerFunc {
+func CreateDoorStatusHandler(doorStatus func(int) (string, error), logger func(string), statusPin int) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var jsonResp struct {
 			Text string `json:"door_status"`
@@ -35,15 +36,16 @@ func CreateDoorStatusHandler(doorStatus func(int) (string, error), statusPin int
 
 		status, err := doorStatus(statusPin)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			errMessage := fmt.Sprintf("%s", err)
+			logger(errMessage)
+			jsonResp.Text = errMessage
 			w.WriteHeader(422)
-			jsonResp.Text = fmt.Sprintf("%s", err)
 		}
 
 		jsonResp.Text = status
 		message, err := json.Marshal(jsonResp)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			logger(fmt.Sprintf("%s", err))
 		}
 		w.Write(message)
 	})
@@ -53,7 +55,7 @@ type ClientRequest struct {
 	Timestamp int64 `json:"timestamp"`
 }
 
-func CreateRelayHandler(toggleSwitch func(int, int) error, pinNumber int, sleepTimeout int) http.HandlerFunc {
+func CreateRelayHandler(toggleSwitch func(int, int) error, logger func(string), pinNumber int, sleepTimeout int) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var jsonResp struct {
 			Status string `json:"status"`
@@ -78,35 +80,38 @@ func CreateRelayHandler(toggleSwitch func(int, int) error, pinNumber int, sleepT
 			var clientRequest ClientRequest
 			err := json.Unmarshal([]byte(body), &clientRequest)
 			if err != nil {
+				errMessage := fmt.Sprintf("%s", err)
+				logger(errMessage)
+				jsonResp.Status = errMessage
 				w.WriteHeader(422)
-				jsonResp.Status = fmt.Sprintf("%s", err)
-				return
 			}
 
 			_, err = VerifyTime(clientRequest.Timestamp)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
+				errMessage := fmt.Sprintf("%s", err)
+				logger(errMessage)
+				jsonResp.Status = errMessage
 				w.WriteHeader(422)
-				jsonResp.Status = fmt.Sprintf("%s", err)
 			}
 
 			// Toggle switch
-			apiLogHandler("TOGGLE DOOR")
+			logger("TOGGLE DOOR")
 			err = toggleSwitch(pinNumber, sleepTimeout)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
+				errMessage := fmt.Sprintf("%s", err)
+				logger(errMessage)
+				jsonResp.Status = errMessage
 				w.WriteHeader(500)
-				jsonResp.Status = fmt.Sprintf("%s", err)
 			}
 		} else {
-			w.WriteHeader(401)
-			apiLogHandler(fmt.Sprintf("Invalid signature: %s", signature))
+			logger(fmt.Sprintf("Invalid signature: %s", signature))
 			jsonResp.Status = "Invalid signature"
+			w.WriteHeader(401)
 		}
 
 		message, err := json.Marshal(jsonResp)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			logger(fmt.Sprintf("%s", err))
 		}
 		w.Write(message)
 	})
