@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-const Version = "4.4.0"
+const Version = "5.0.0"
 
 var options struct {
 	http            string
