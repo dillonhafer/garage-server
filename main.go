@@ -22,7 +22,7 @@ var options struct {
 var SharedSecret = os.Getenv("GARAGE_SECRET")
 
 func main() {
-	if os.Args[1] == "update" {
+	if len(os.Args) > 1 && os.Args[1] == "update" {
 		CheckForUpdates()
 		os.Exit(0)
 	}
