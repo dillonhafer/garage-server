@@ -13,6 +13,7 @@ import (
 func apiLogHandler(event string) {
 	fmt.Fprintln(os.Stderr, event, "-", time.Now())
 }
+
 func VersionHandler(logger func(string)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		logger("Version")
@@ -31,7 +32,7 @@ func VersionHandler(logger func(string)) http.HandlerFunc {
 func DoorStatusHandler(doorStatus func(int) (string, error), logger func(string), statusPin int) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var jsonResp struct {
-			Text string `json:"door_status"`
+			Text string `json:"doorStatus"`
 		}
 
 		status, err := doorStatus(statusPin)

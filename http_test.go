@@ -133,7 +133,7 @@ func TestOpenOnStatus(t *testing.T) {
 	responseEqual(t, writer.Code, 200)
 
 	var resp struct {
-		Status string `json:"door_status"`
+		Status string `json:"doorStatus"`
 	}
 	decoder := json.NewDecoder(writer.Body)
 	if err := decoder.Decode(&resp); err != nil {
@@ -159,7 +159,7 @@ func TestClosedOnStatus(t *testing.T) {
 	responseEqual(t, writer.Code, 200)
 
 	var resp struct {
-		Status string `json:"door_status"`
+		Status string `json:"doorStatus"`
 	}
 	decoder := json.NewDecoder(writer.Body)
 	if err := decoder.Decode(&resp); err != nil {
