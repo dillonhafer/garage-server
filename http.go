@@ -36,7 +36,7 @@ func DoorStatusHandler(doorStatus func(int) (string, error), logger func(string)
 
 		status, err := doorStatus(statusPin)
 		if err != nil {
-			errMessage := fmt.Sprintf("%s", err)
+			errMessage := fmt.Sprintf("Could not read pin '%d' on Raspberry Pi", statusPin)
 			logger(errMessage)
 			jsonResp.Text = errMessage
 			w.WriteHeader(422)
