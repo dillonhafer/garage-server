@@ -60,7 +60,7 @@ func main() {
 	Status := CreateDoorStatusHandler(CheckDoorStatus, apiLogHandler, options.statusPinNumber)
 	AppVersion := CreateVersionHandler(apiLogHandler)
 
-	http.HandleFunc("/", Relay)
+	http.HandleFunc("/toggle", Relay)
 	http.HandleFunc("/status", Status)
 	http.HandleFunc("/version", AppVersion)
 

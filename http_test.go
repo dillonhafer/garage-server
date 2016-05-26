@@ -142,7 +142,7 @@ func TestSuccessfulToggleRelay(t *testing.T) {
 	writer := httptest.NewRecorder()
 	validTimestamp := CreateTimestamp(0)
 
-	req, err := http.NewRequest("GET", "/", nil)
+	req, err := http.NewRequest("GET", "/toggle", nil)
 	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), SharedSecret))
 	req.Header.Add("timestamp", validTimestamp)
 	if err != nil {
@@ -170,7 +170,7 @@ func TestUnverifiedSignatureRelay(t *testing.T) {
 	writer := httptest.NewRecorder()
 	timestamp := CreateTimestamp(0)
 
-	req, err := http.NewRequest("GET", "/", nil)
+	req, err := http.NewRequest("GET", "/toggle", nil)
 	req.Header.Add("signature", CreateSignature([]byte(timestamp), "Bad Signature"))
 	req.Header.Add("timestamp", timestamp)
 	if err != nil {
@@ -198,7 +198,7 @@ func TestExpiredRequestRelay(t *testing.T) {
 	writer := httptest.NewRecorder()
 	invalidTimestamp := CreateTimestamp(20)
 
-	req, err := http.NewRequest("GET", "/", nil)
+	req, err := http.NewRequest("GET", "/toggle", nil)
 	req.Header.Add("signature", CreateSignature([]byte(invalidTimestamp), SharedSecret))
 	req.Header.Add("timestamp", invalidTimestamp)
 	if err != nil {
@@ -226,7 +226,7 @@ func TestToggleFailedRelay(t *testing.T) {
 	writer := httptest.NewRecorder()
 	validTimestamp := CreateTimestamp(0)
 
-	req, err := http.NewRequest("GET", "/", nil)
+	req, err := http.NewRequest("GET", "/toggle", nil)
 	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), SharedSecret))
 	req.Header.Add("timestamp", validTimestamp)
 
