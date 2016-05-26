@@ -60,12 +60,16 @@ func DummyLogger(s string) {}
 
 func TestVersion(t *testing.T) {
 	writer := httptest.NewRecorder()
+	validTimestamp := CreateTimestamp(0)
+
 	req, err := http.NewRequest("GET", "/version", nil)
+	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), SharedSecret))
+	req.Header.Add("timestamp", validTimestamp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	AppVersion := CreateVersionHandler(DummyLogger)
+	AppVersion := AuthenticatedHandler(VersionHandler(DummyLogger))
 	AppVersion(writer, req)
 	responseEqual(t, writer.Code, 200)
 
@@ -78,6 +82,38 @@ func TestVersion(t *testing.T) {
 	}
 
 	stringEqual(t, resp.Version, Version)
+}
+
+func TestUnverifiedSignatureOnVersion(t *testing.T) {
+	writer := httptest.NewRecorder()
+	validTimestamp := CreateTimestamp(0)
+
+	req, err := http.NewRequest("GET", "/version", nil)
+	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), "Unverified Signature"))
+	req.Header.Add("timestamp", validTimestamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	AppVersion := AuthenticatedHandler(VersionHandler(DummyLogger))
+	AppVersion(writer, req)
+	responseEqual(t, writer.Code, 403)
+}
+
+func TestExpiredTimestampOnVersion(t *testing.T) {
+	writer := httptest.NewRecorder()
+	expiredTimestamp := CreateTimestamp(20)
+
+	req, err := http.NewRequest("GET", "/version", nil)
+	req.Header.Add("signature", CreateSignature([]byte(expiredTimestamp), SharedSecret))
+	req.Header.Add("timestamp", expiredTimestamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	AppVersion := AuthenticatedHandler(VersionHandler(DummyLogger))
+	AppVersion(writer, req)
+	responseEqual(t, writer.Code, 403)
 }
 
 func TestOpenOnStatus(t *testing.T) {
@@ -150,29 +186,28 @@ func TestErrorOnStatus(t *testing.T) {
 	responseEqual(t, writer.Code, 422)
 }
 
-func TestBadTimestampOnStatus(t *testing.T) {
+func TestExpiredTimestampOnStatus(t *testing.T) {
 	writer := httptest.NewRecorder()
-	validTimestamp := CreateTimestamp(20)
+	expiredTimestamp := CreateTimestamp(20)
 
 	req, err := http.NewRequest("GET", "/status", nil)
-	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), SharedSecret))
-	req.Header.Add("timestamp", validTimestamp)
+	req.Header.Add("signature", CreateSignature([]byte(expiredTimestamp), SharedSecret))
+	req.Header.Add("timestamp", expiredTimestamp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	Status := AuthenticatedHandler(DoorStatusHandler(CreateDummyStatus("open"), DummyLogger, 0))
 	Status(writer, req)
-
 	responseEqual(t, writer.Code, 403)
 }
 
-func TestBadSignatureOnStatus(t *testing.T) {
+func TestUnverifiedSignatureOnStatus(t *testing.T) {
 	writer := httptest.NewRecorder()
 	validTimestamp := CreateTimestamp(0)
 
 	req, err := http.NewRequest("GET", "/status", nil)
-	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), "Bad Secret"))
+	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), "Unverified Signature"))
 	req.Header.Add("timestamp", validTimestamp)
 	if err != nil {
 		t.Fatal(err)
@@ -212,12 +247,12 @@ func TestSuccessfulToggleRelay(t *testing.T) {
 	stringEqual(t, resp.Status, "signal received")
 }
 
-func TestUnverifiedSignatureRelay(t *testing.T) {
+func TestUnverifiedSignatureOnRelay(t *testing.T) {
 	writer := httptest.NewRecorder()
 	timestamp := CreateTimestamp(0)
 
 	req, err := http.NewRequest("GET", "/toggle", nil)
-	req.Header.Add("signature", CreateSignature([]byte(timestamp), "Bad Signature"))
+	req.Header.Add("signature", CreateSignature([]byte(timestamp), "Unverified Signature"))
 	req.Header.Add("timestamp", timestamp)
 	if err != nil {
 		t.Fatal(err)
@@ -228,13 +263,13 @@ func TestUnverifiedSignatureRelay(t *testing.T) {
 	responseEqual(t, writer.Code, 403)
 }
 
-func TestExpiredRequestRelay(t *testing.T) {
+func TestExpiredTimestampOnRelay(t *testing.T) {
 	writer := httptest.NewRecorder()
-	invalidTimestamp := CreateTimestamp(20)
+	expiredTimestamp := CreateTimestamp(20)
 
 	req, err := http.NewRequest("GET", "/toggle", nil)
-	req.Header.Add("signature", CreateSignature([]byte(invalidTimestamp), SharedSecret))
-	req.Header.Add("timestamp", invalidTimestamp)
+	req.Header.Add("signature", CreateSignature([]byte(expiredTimestamp), SharedSecret))
+	req.Header.Add("timestamp", expiredTimestamp)
 	if err != nil {
 		t.Fatal(err)
 	}

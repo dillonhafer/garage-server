@@ -13,7 +13,7 @@ import (
 func apiLogHandler(event string) {
 	fmt.Fprintln(os.Stderr, event, "-", time.Now())
 }
-func CreateVersionHandler(logger func(string)) http.HandlerFunc {
+func VersionHandler(logger func(string)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		logger("Version")
 		var jsonResp struct {
