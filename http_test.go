@@ -44,6 +44,18 @@ func CreateDummyRelay(bad bool) func(int, int) error {
 	}
 }
 
+func CreateSignature(body []byte, secret string) string {
+	mac := hmac.New(sha512.New, []byte(secret))
+	mac.Write(body)
+	expectedMAC := []byte(hex.EncodeToString(mac.Sum(nil)))
+	return base64.URLEncoding.EncodeToString(expectedMAC)
+}
+
+func CreateTimestamp(offset int64) string {
+	validTime := time.Now().Unix() - offset
+	return fmt.Sprintf("%d", validTime)
+}
+
 func DummyLogger(s string) {}
 
 func TestVersion(t *testing.T) {
@@ -68,14 +80,18 @@ func TestVersion(t *testing.T) {
 	stringEqual(t, resp.Version, Version)
 }
 
-func TestOpenStatus(t *testing.T) {
+func TestOpenOnStatus(t *testing.T) {
 	writer := httptest.NewRecorder()
+	validTimestamp := CreateTimestamp(0)
+
 	req, err := http.NewRequest("GET", "/status", nil)
+	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), SharedSecret))
+	req.Header.Add("timestamp", validTimestamp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	Status := CreateDoorStatusHandler(CreateDummyStatus("open"), DummyLogger, 0)
+	Status := AuthenticatedHandler(DoorStatusHandler(CreateDummyStatus("open"), DummyLogger, 0))
 	Status(writer, req)
 
 	responseEqual(t, writer.Code, 200)
@@ -90,14 +106,18 @@ func TestOpenStatus(t *testing.T) {
 	stringEqual(t, resp.Status, "open")
 }
 
-func TestClosedStatus(t *testing.T) {
+func TestClosedOnStatus(t *testing.T) {
 	writer := httptest.NewRecorder()
+	validTimestamp := CreateTimestamp(0)
+
 	req, err := http.NewRequest("GET", "/status", nil)
+	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), SharedSecret))
+	req.Header.Add("timestamp", validTimestamp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	Status := CreateDoorStatusHandler(CreateDummyStatus("closed"), DummyLogger, 0)
+	Status := AuthenticatedHandler(DoorStatusHandler(CreateDummyStatus("closed"), DummyLogger, 0))
 	Status(writer, req)
 
 	responseEqual(t, writer.Code, 200)
@@ -113,29 +133,55 @@ func TestClosedStatus(t *testing.T) {
 	stringEqual(t, resp.Status, "closed")
 }
 
-func TestErrorStatus(t *testing.T) {
+func TestErrorOnStatus(t *testing.T) {
 	writer := httptest.NewRecorder()
+	validTimestamp := CreateTimestamp(0)
+
 	req, err := http.NewRequest("GET", "/status", nil)
+	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), SharedSecret))
+	req.Header.Add("timestamp", validTimestamp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	Status := CreateDoorStatusHandler(CreateDummyStatus("error"), DummyLogger, 0)
+	Status := AuthenticatedHandler(DoorStatusHandler(CreateDummyStatus("error"), DummyLogger, 0))
 	Status(writer, req)
 
 	responseEqual(t, writer.Code, 422)
 }
 
-func CreateSignature(body []byte, secret string) string {
-	mac := hmac.New(sha512.New, []byte(secret))
-	mac.Write(body)
-	expectedMAC := []byte(hex.EncodeToString(mac.Sum(nil)))
-	return base64.URLEncoding.EncodeToString(expectedMAC)
+func TestBadTimestampOnStatus(t *testing.T) {
+	writer := httptest.NewRecorder()
+	validTimestamp := CreateTimestamp(20)
+
+	req, err := http.NewRequest("GET", "/status", nil)
+	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), SharedSecret))
+	req.Header.Add("timestamp", validTimestamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	Status := AuthenticatedHandler(DoorStatusHandler(CreateDummyStatus("open"), DummyLogger, 0))
+	Status(writer, req)
+
+	responseEqual(t, writer.Code, 403)
 }
 
-func CreateTimestamp(offset int64) string {
-	validTime := time.Now().Unix() - offset
-	return fmt.Sprintf("%d", validTime)
+func TestBadSignatureOnStatus(t *testing.T) {
+	writer := httptest.NewRecorder()
+	validTimestamp := CreateTimestamp(0)
+
+	req, err := http.NewRequest("GET", "/status", nil)
+	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), "Bad Secret"))
+	req.Header.Add("timestamp", validTimestamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	Status := AuthenticatedHandler(DoorStatusHandler(CreateDummyStatus("error"), DummyLogger, 0))
+	Status(writer, req)
+
+	responseEqual(t, writer.Code, 403)
 }
 
 func TestSuccessfulToggleRelay(t *testing.T) {
