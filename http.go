@@ -98,7 +98,7 @@ func CreateRelayHandler(toggleSwitch func(int, int) error, logger func(string), 
 			logger("TOGGLE DOOR")
 			err = toggleSwitch(pinNumber, sleepTimeout)
 			if err != nil {
-				errMessage := fmt.Sprintf("%s", err)
+				errMessage := "Could not write to pin"
 				logger(errMessage)
 				jsonResp.Status = errMessage
 				w.WriteHeader(500)

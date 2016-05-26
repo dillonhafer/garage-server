@@ -255,5 +255,5 @@ func TestToggleFailedRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stringEqual(t, resp.Status, "open /dev/mem: no such file or directory")
+	stringEqual(t, resp.Status, "Could not write to pin")
 }
