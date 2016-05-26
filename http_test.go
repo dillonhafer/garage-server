@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/base64"
@@ -11,8 +10,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"strconv"
 	"testing"
 	"time"
 )
@@ -138,17 +135,16 @@ func CreateSignature(body []byte, secret string) string {
 
 func CreateTimestamp(offset int64) string {
 	validTime := time.Now().Unix() - offset
-	return fmt.Sprintf("{\"timestamp\":%d}", validTime)
+	return fmt.Sprintf("%d", validTime)
 }
 
 func TestSuccessfulToggleRelay(t *testing.T) {
 	writer := httptest.NewRecorder()
 	validTimestamp := CreateTimestamp(0)
 
-	req, err := http.NewRequest("POST", "/", bytes.NewBufferString(validTimestamp))
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req, err := http.NewRequest("GET", "/", nil)
 	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), SharedSecret))
-	req.Header.Add("Content-Length", strconv.Itoa(len(validTimestamp)))
+	req.Header.Add("timestamp", validTimestamp)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,13 +168,11 @@ func TestSuccessfulToggleRelay(t *testing.T) {
 
 func TestUnverifiedSignatureRelay(t *testing.T) {
 	writer := httptest.NewRecorder()
-	data := url.Values{}.Encode()
-	timestamp := bytes.NewBufferString(data)
+	timestamp := CreateTimestamp(0)
 
-	req, err := http.NewRequest("POST", "/", timestamp)
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Add("signature", CreateSignature([]byte(data), "bad secret"))
-	req.Header.Add("Content-Length", strconv.Itoa(len(data)))
+	req, err := http.NewRequest("GET", "/", nil)
+	req.Header.Add("signature", CreateSignature([]byte(timestamp), "Bad Signature"))
+	req.Header.Add("timestamp", timestamp)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,10 +198,9 @@ func TestExpiredRequestRelay(t *testing.T) {
 	writer := httptest.NewRecorder()
 	invalidTimestamp := CreateTimestamp(20)
 
-	req, err := http.NewRequest("POST", "/", bytes.NewBufferString(invalidTimestamp))
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req, err := http.NewRequest("GET", "/", nil)
 	req.Header.Add("signature", CreateSignature([]byte(invalidTimestamp), SharedSecret))
-	req.Header.Add("Content-Length", strconv.Itoa(len(invalidTimestamp)))
+	req.Header.Add("timestamp", invalidTimestamp)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,10 +226,10 @@ func TestToggleFailedRelay(t *testing.T) {
 	writer := httptest.NewRecorder()
 	validTimestamp := CreateTimestamp(0)
 
-	req, err := http.NewRequest("POST", "/", bytes.NewBufferString(validTimestamp))
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req, err := http.NewRequest("GET", "/", nil)
 	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), SharedSecret))
-	req.Header.Add("Content-Length", strconv.Itoa(len(validTimestamp)))
+	req.Header.Add("timestamp", validTimestamp)
+
 	if err != nil {
 		t.Fatal(err)
 	}

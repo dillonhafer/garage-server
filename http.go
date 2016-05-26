@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -51,10 +51,6 @@ func CreateDoorStatusHandler(doorStatus func(int) (string, error), logger func(s
 	})
 }
 
-type ClientRequest struct {
-	Timestamp int64 `json:"timestamp"`
-}
-
 func CreateRelayHandler(toggleSwitch func(int, int) error, logger func(string), pinNumber int, sleepTimeout int) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var jsonResp struct {
@@ -63,6 +59,7 @@ func CreateRelayHandler(toggleSwitch func(int, int) error, logger func(string), 
 		jsonResp.Status = "signal received"
 
 		header := r.Header.Get("signature")
+		timestamp := r.Header.Get("timestamp")
 		signature, err := base64.URLEncoding.DecodeString(header)
 		if err != nil {
 			w.WriteHeader(422)
@@ -70,23 +67,17 @@ func CreateRelayHandler(toggleSwitch func(int, int) error, logger func(string), 
 			return
 		}
 
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(r.Body)
-		body := buf.Bytes()
-
-		verified := VerifySignature(body, signature)
+		verified := VerifySignature([]byte(timestamp), signature)
 		if verified {
 			// Verify time
-			var clientRequest ClientRequest
-			err := json.Unmarshal([]byte(body), &clientRequest)
+			i, err := strconv.ParseInt(timestamp, 10, 64)
 			if err != nil {
-				errMessage := fmt.Sprintf("%s", err)
+				errMessage := "Could not parse timestamp"
 				logger(errMessage)
 				jsonResp.Status = errMessage
-				w.WriteHeader(422)
+				w.WriteHeader(500)
 			}
-
-			_, err = VerifyTime(clientRequest.Timestamp)
+			_, err = VerifyTime(i)
 			if err != nil {
 				errMessage := fmt.Sprintf("%s", err)
 				logger(errMessage)
