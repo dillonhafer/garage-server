@@ -51,59 +51,58 @@ func CreateDoorStatusHandler(doorStatus func(int) (string, error), logger func(s
 	})
 }
 
-func CreateRelayHandler(toggleSwitch func(int, int) error, logger func(string), pinNumber int, sleepTimeout int) http.HandlerFunc {
+func RelayHandle(toggleSwitch func(int, int) error, logger func(string), pinNumber int, sleepTimeout int) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var jsonResp struct {
-			Status string `json:"status"`
-		}
-		jsonResp.Status = "signal received"
-
-		header := r.Header.Get("signature")
-		timestamp := r.Header.Get("timestamp")
-		signature, err := base64.URLEncoding.DecodeString(header)
+		logger("TOGGLE DOOR")
+		err := toggleSwitch(pinNumber, sleepTimeout)
 		if err != nil {
-			w.WriteHeader(422)
-			jsonResp.Status = fmt.Sprintf("%s", err)
+			errMessage := "Could not write to pin"
+			logger(errMessage)
+			w.WriteHeader(500)
 			return
 		}
 
-		verified := VerifySignature([]byte(timestamp), signature)
-		if verified {
-			// Verify time
-			i, err := strconv.ParseInt(timestamp, 10, 64)
-			if err != nil {
-				errMessage := "Could not parse timestamp"
-				logger(errMessage)
-				jsonResp.Status = errMessage
-				w.WriteHeader(500)
-			}
-			_, err = VerifyTime(i)
-			if err != nil {
-				errMessage := fmt.Sprintf("%s", err)
-				logger(errMessage)
-				jsonResp.Status = errMessage
-				w.WriteHeader(422)
-			}
-
-			// Toggle switch
-			logger("TOGGLE DOOR")
-			err = toggleSwitch(pinNumber, sleepTimeout)
-			if err != nil {
-				errMessage := "Could not write to pin"
-				logger(errMessage)
-				jsonResp.Status = errMessage
-				w.WriteHeader(500)
-			}
-		} else {
-			logger(fmt.Sprintf("Invalid signature: %s", signature))
-			jsonResp.Status = "Invalid signature"
-			w.WriteHeader(401)
+		var resp struct {
+			Status string `json:"status"`
 		}
-
-		message, err := json.Marshal(jsonResp)
+		resp.Status = "signal received"
+		message, err := json.Marshal(resp)
 		if err != nil {
 			logger(fmt.Sprintf("%s", err))
 		}
 		w.Write(message)
+	})
+}
+
+func AuthenticatedHandler(f http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		signature := req.Header.Get("signature")
+		timestamp := req.Header.Get("timestamp")
+		decodedSignature, err := base64.URLEncoding.DecodeString(signature)
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
+		verified := VerifySignature([]byte(timestamp), decodedSignature)
+		if verified {
+			// Verify time
+			i, err := strconv.ParseInt(timestamp, 10, 64)
+			if err != nil {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+
+			_, err = VerifyTime(i)
+			if err != nil {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
+		f(w, req)
 	})
 }

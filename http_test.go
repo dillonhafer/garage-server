@@ -149,7 +149,7 @@ func TestSuccessfulToggleRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Relay := CreateRelayHandler(CreateDummyRelay(false), DummyLogger, 0, 1)
+	Relay := AuthenticatedHandler(RelayHandle(CreateDummyRelay(false), DummyLogger, 0, 1))
 	Relay(writer, req)
 
 	responseEqual(t, writer.Code, 200)
@@ -177,21 +177,9 @@ func TestUnverifiedSignatureRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Relay := CreateRelayHandler(CreateDummyRelay(false), DummyLogger, 0, 1)
+	Relay := AuthenticatedHandler(RelayHandle(CreateDummyRelay(false), DummyLogger, 0, 1))
 	Relay(writer, req)
-
-	responseEqual(t, writer.Code, 401)
-
-	var resp struct {
-		Status string `json:"status"`
-	}
-
-	decoder := json.NewDecoder(writer.Body)
-	if err := decoder.Decode(&resp); err != nil {
-		t.Fatal(err)
-	}
-
-	stringEqual(t, resp.Status, "Invalid signature")
+	responseEqual(t, writer.Code, 403)
 }
 
 func TestExpiredRequestRelay(t *testing.T) {
@@ -205,21 +193,10 @@ func TestExpiredRequestRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Relay := CreateRelayHandler(CreateDummyRelay(false), DummyLogger, 0, 1)
+	Relay := AuthenticatedHandler(RelayHandle(CreateDummyRelay(false), DummyLogger, 0, 1))
 	Relay(writer, req)
 
-	responseEqual(t, writer.Code, 422)
-
-	var resp struct {
-		Status string `json:"status"`
-	}
-
-	decoder := json.NewDecoder(writer.Body)
-	if err := decoder.Decode(&resp); err != nil {
-		t.Fatal(err)
-	}
-
-	stringEqual(t, resp.Status, "Timestamp is too far in the past")
+	responseEqual(t, writer.Code, 403)
 }
 
 func TestToggleFailedRelay(t *testing.T) {
@@ -234,19 +211,8 @@ func TestToggleFailedRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Relay := CreateRelayHandler(CreateDummyRelay(true), DummyLogger, 0, 1)
+	Relay := AuthenticatedHandler(RelayHandle(CreateDummyRelay(true), DummyLogger, 0, 1))
 	Relay(writer, req)
 
 	responseEqual(t, writer.Code, 500)
-
-	var resp struct {
-		Status string `json:"status"`
-	}
-
-	decoder := json.NewDecoder(writer.Body)
-	if err := decoder.Decode(&resp); err != nil {
-		t.Fatal(err)
-	}
-
-	stringEqual(t, resp.Status, "Could not write to pin")
 }
