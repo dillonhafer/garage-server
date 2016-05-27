@@ -19,6 +19,8 @@ I really like the above relay because when the power is disconnected and restore
     	HTTP listen address (e.g. 127.0.0.1:8225)
   -key string
     	TLS key path (e.g. /certs/example.com.key)
+  -log string
+      Path to read logs from
   -pin int
     	GPIO pin of relay (default 25)
   -sleep int
