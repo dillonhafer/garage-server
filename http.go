@@ -75,6 +75,18 @@ func RelayHandle(toggleSwitch func(int, int) error, logger func(string), pinNumb
 	})
 }
 
+func LogsHandler(logger func(string), logFile string) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		logger("Logs")
+		logs := ParseLogs(logFile)
+		entries, err := json.Marshal(logs)
+		if err != nil {
+			logger(fmt.Sprintf("%s", err))
+		}
+		w.Write(entries)
+	})
+}
+
 func AuthenticatedHandler(f http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		signature := req.Header.Get("signature")

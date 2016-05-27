@@ -16,6 +16,7 @@ var options struct {
 	sleepTimeout    int
 	cert            string
 	key             string
+	log             string
 	version         bool
 }
 
@@ -38,6 +39,7 @@ func main() {
 	flag.StringVar(&options.http, "http", "", "HTTP listen address (e.g. 127.0.0.1:8225)")
 	flag.StringVar(&options.cert, "cert", "", "SSL certificate path (e.g. /ssl/example.com.cert)")
 	flag.StringVar(&options.key, "key", "", "SSL certificate key (e.g. /ssl/example.com.key)")
+	flag.StringVar(&options.log, "log", "", "Path to read logs from")
 	flag.BoolVar(&options.version, "version", false, "print version and exit")
 	flag.Parse()
 
@@ -59,10 +61,12 @@ func main() {
 	Relay := AuthenticatedHandler(RelayHandle(ToggleSwitch, apiLogHandler, options.pinNumber, options.sleepTimeout))
 	Status := AuthenticatedHandler(DoorStatusHandler(CheckDoorStatus, apiLogHandler, options.statusPinNumber))
 	AppVersion := AuthenticatedHandler(VersionHandler(apiLogHandler))
+	Logs := AuthenticatedHandler(LogsHandler(apiLogHandler, options.log))
 
 	http.HandleFunc("/toggle", Relay)
 	http.HandleFunc("/status", Status)
 	http.HandleFunc("/version", AppVersion)
+	http.HandleFunc("/logs", Logs)
 
 	fmt.Fprintln(os.Stderr, "=> Booting Garage Server ", Version)
 	fmt.Fprintln(os.Stderr, "=> Run `garage-server -h` for more startup options")

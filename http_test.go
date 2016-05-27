@@ -8,8 +8,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 )
@@ -23,6 +26,12 @@ func responseEqual(t *testing.T, a int, b int) {
 func stringEqual(t *testing.T, a string, b string) {
 	if a != b {
 		t.Fatalf("Expected '%s' to equal '%s'", a, b)
+	}
+}
+
+func numberEqual(t *testing.T, a int, b int) {
+	if a != b {
+		t.Fatalf("Expected '%d' to equal '%d'", a, b)
 	}
 }
 
@@ -296,4 +305,85 @@ func TestToggleFailedRelay(t *testing.T) {
 	Relay(writer, req)
 
 	responseEqual(t, writer.Code, 500)
+}
+
+func TestLogs(t *testing.T) {
+	writer := httptest.NewRecorder()
+	validTimestamp := CreateTimestamp(0)
+
+	req, err := http.NewRequest("GET", "/logs", nil)
+	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), SharedSecret))
+	req.Header.Add("timestamp", validTimestamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	file := `Version - 2016-04-26 22:42:43.254676358 -0500 CDT
+TOGGLE DOOR - 2016-05-24 17:07:43.384659988 -0500 CDT
+Could not read pin '10' on Raspberry Pi - 2016-05-26 22:42:44.713070359 -0500 CDT
+TOGGLE DOOR - 2016-05-25 9:03:43.384659988 -0500 CDT
+Version - 2016-05-26 22:43:15.450148727 -0500 CDT
+TOGGLE DOOR - 2016-05-26 23:03:43.384659988 -0500 CDT`
+
+	content := []byte(file)
+	tmpfile, err := ioutil.TempFile("", "test_log_file")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer os.Remove(tmpfile.Name())
+
+	if _, err := tmpfile.Write(content); err != nil {
+		log.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		log.Fatal(err)
+	}
+
+	AppVersion := AuthenticatedHandler(LogsHandler(DummyLogger, tmpfile.Name()))
+	AppVersion(writer, req)
+	responseEqual(t, writer.Code, 200)
+
+	logs := &Logs{}
+	decoder := json.NewDecoder(writer.Body)
+	if err := decoder.Decode(&logs); err != nil {
+		t.Fatal(err)
+	}
+
+	numberEqual(t, len(logs.Entries), 3)
+	stringEqual(t, logs.Entries[0].Date, "Thu May 26 2016")
+	stringEqual(t, logs.Entries[0].Time, "11:03 PM")
+	stringEqual(t, logs.Entries[0].Type, "Toggle")
+}
+
+func TestUnverifiedSignatureOnLogs(t *testing.T) {
+	writer := httptest.NewRecorder()
+	validTimestamp := CreateTimestamp(0)
+
+	req, err := http.NewRequest("GET", "/logs", nil)
+	req.Header.Add("signature", CreateSignature([]byte(validTimestamp), "Unverified Signature"))
+	req.Header.Add("timestamp", validTimestamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	AppVersion := AuthenticatedHandler(LogsHandler(DummyLogger, "file"))
+	AppVersion(writer, req)
+	responseEqual(t, writer.Code, 403)
+}
+
+func TestExpiredTimestampOnLogs(t *testing.T) {
+	writer := httptest.NewRecorder()
+	expiredTimestamp := CreateTimestamp(20)
+
+	req, err := http.NewRequest("GET", "/logs", nil)
+	req.Header.Add("signature", CreateSignature([]byte(expiredTimestamp), SharedSecret))
+	req.Header.Add("timestamp", expiredTimestamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	AppVersion := AuthenticatedHandler(LogsHandler(DummyLogger, "file"))
+	AppVersion(writer, req)
+	responseEqual(t, writer.Code, 403)
 }
