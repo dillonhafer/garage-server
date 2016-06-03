@@ -239,7 +239,7 @@ func TestSuccessfulToggleRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Relay := AuthenticatedHandler(RelayHandle(CreateDummyRelay(false), DummyLogger, 0, 1))
+	Relay := CreateRelayHandle(CreateDummyRelay(false), DummyLogger, 0, 1)
 	Relay(writer, req)
 
 	responseEqual(t, writer.Code, 200)
@@ -267,7 +267,7 @@ func TestUnverifiedSignatureOnRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Relay := AuthenticatedHandler(RelayHandle(CreateDummyRelay(false), DummyLogger, 0, 1))
+	Relay := CreateRelayHandle(CreateDummyRelay(false), DummyLogger, 0, 1)
 	Relay(writer, req)
 	responseEqual(t, writer.Code, 403)
 }
@@ -283,7 +283,7 @@ func TestExpiredTimestampOnRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Relay := AuthenticatedHandler(RelayHandle(CreateDummyRelay(false), DummyLogger, 0, 1))
+	Relay := CreateRelayHandle(CreateDummyRelay(false), DummyLogger, 0, 1)
 	Relay(writer, req)
 
 	responseEqual(t, writer.Code, 403)
@@ -301,7 +301,7 @@ func TestToggleFailedRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Relay := AuthenticatedHandler(RelayHandle(CreateDummyRelay(true), DummyLogger, 0, 1))
+	Relay := CreateRelayHandle(CreateDummyRelay(true), DummyLogger, 0, 1)
 	Relay(writer, req)
 
 	responseEqual(t, writer.Code, 500)

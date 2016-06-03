@@ -58,7 +58,7 @@ func main() {
 		serveAddress = options.http
 	}
 
-	Relay := AuthenticatedHandler(RelayHandle(ToggleSwitch, apiLogHandler, options.pinNumber, options.sleepTimeout))
+	Relay := CreateRelayHandle(ToggleSwitch, apiLogHandler, options.pinNumber, options.sleepTimeout)
 	Status := CreateDoorStatusHandler(CheckDoorStatus, apiLogHandler, options.statusPinNumber)
 	AppVersion := CreateVersionHandler(apiLogHandler)
 	Logs := AuthenticatedHandler(LogsHandler(apiLogHandler, options.log))

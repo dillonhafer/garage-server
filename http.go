@@ -83,6 +83,10 @@ func RelayHandle(toggleSwitch func(int, int) error, logger func(string), pinNumb
 	})
 }
 
+func CreateRelayHandle(toggleSwitch func(int, int) error, logger func(string), pinNumber int, sleepTimeout int) http.HandlerFunc {
+	return AuthenticatedHandler(RelayHandle(toggleSwitch, logger, pinNumber, sleepTimeout))
+}
+
 func LogsHandler(logger func(string), logFile string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		logger("Logs")
