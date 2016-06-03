@@ -29,6 +29,10 @@ func VersionHandler(logger func(string)) http.HandlerFunc {
 	})
 }
 
+func CreateVersionHandler(logger func(string)) http.HandlerFunc {
+	return AuthenticatedHandler(VersionHandler(logger))
+}
+
 func DoorStatusHandler(doorStatus func(int) (string, error), logger func(string), statusPin int) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var jsonResp struct {

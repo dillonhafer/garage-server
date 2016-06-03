@@ -78,7 +78,7 @@ func TestVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	AppVersion := AuthenticatedHandler(VersionHandler(DummyLogger))
+	AppVersion := CreateVersionHandler(DummyLogger)
 	AppVersion(writer, req)
 	responseEqual(t, writer.Code, 200)
 
@@ -104,7 +104,7 @@ func TestUnverifiedSignatureOnVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	AppVersion := AuthenticatedHandler(VersionHandler(DummyLogger))
+	AppVersion := CreateVersionHandler(DummyLogger)
 	AppVersion(writer, req)
 	responseEqual(t, writer.Code, 403)
 }
@@ -120,7 +120,7 @@ func TestExpiredTimestampOnVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	AppVersion := AuthenticatedHandler(VersionHandler(DummyLogger))
+	AppVersion := CreateVersionHandler(DummyLogger)
 	AppVersion(writer, req)
 	responseEqual(t, writer.Code, 403)
 }
