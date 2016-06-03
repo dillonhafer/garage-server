@@ -136,7 +136,7 @@ func TestOpenOnStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Status := AuthenticatedHandler(DoorStatusHandler(CreateDummyStatus("open"), DummyLogger, 0))
+	Status := CreateDoorStatusHandler(CreateDummyStatus("open"), DummyLogger, 0)
 	Status(writer, req)
 
 	responseEqual(t, writer.Code, 200)
@@ -162,7 +162,7 @@ func TestClosedOnStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Status := AuthenticatedHandler(DoorStatusHandler(CreateDummyStatus("closed"), DummyLogger, 0))
+	Status := CreateDoorStatusHandler(CreateDummyStatus("closed"), DummyLogger, 0)
 	Status(writer, req)
 
 	responseEqual(t, writer.Code, 200)
@@ -189,7 +189,7 @@ func TestErrorOnStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Status := AuthenticatedHandler(DoorStatusHandler(CreateDummyStatus("error"), DummyLogger, 0))
+	Status := CreateDoorStatusHandler(CreateDummyStatus("error"), DummyLogger, 0)
 	Status(writer, req)
 
 	responseEqual(t, writer.Code, 422)
@@ -206,7 +206,7 @@ func TestExpiredTimestampOnStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Status := AuthenticatedHandler(DoorStatusHandler(CreateDummyStatus("open"), DummyLogger, 0))
+	Status := CreateDoorStatusHandler(CreateDummyStatus("open"), DummyLogger, 0)
 	Status(writer, req)
 	responseEqual(t, writer.Code, 403)
 }
@@ -222,7 +222,7 @@ func TestUnverifiedSignatureOnStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Status := AuthenticatedHandler(DoorStatusHandler(CreateDummyStatus("error"), DummyLogger, 0))
+	Status := CreateDoorStatusHandler(CreateDummyStatus("error"), DummyLogger, 0)
 	Status(writer, req)
 
 	responseEqual(t, writer.Code, 403)

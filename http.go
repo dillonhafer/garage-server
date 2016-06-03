@@ -56,6 +56,10 @@ func DoorStatusHandler(doorStatus func(int) (string, error), logger func(string)
 	})
 }
 
+func CreateDoorStatusHandler(doorStatus func(int) (string, error), logger func(string), statusPin int) http.HandlerFunc {
+	return AuthenticatedHandler(DoorStatusHandler(doorStatus, logger, statusPin))
+}
+
 func RelayHandle(toggleSwitch func(int, int) error, logger func(string), pinNumber int, sleepTimeout int) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger("TOGGLE DOOR")

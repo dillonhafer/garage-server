@@ -59,7 +59,7 @@ func main() {
 	}
 
 	Relay := AuthenticatedHandler(RelayHandle(ToggleSwitch, apiLogHandler, options.pinNumber, options.sleepTimeout))
-	Status := AuthenticatedHandler(DoorStatusHandler(CheckDoorStatus, apiLogHandler, options.statusPinNumber))
+	Status := CreateDoorStatusHandler(CheckDoorStatus, apiLogHandler, options.statusPinNumber)
 	AppVersion := CreateVersionHandler(apiLogHandler)
 	Logs := AuthenticatedHandler(LogsHandler(apiLogHandler, options.log))
 
