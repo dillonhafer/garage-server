@@ -99,6 +99,10 @@ func LogsHandler(logger func(string), logFile string) http.HandlerFunc {
 	})
 }
 
+func CreateLogsHandler(logger func(string), logFile string) http.HandlerFunc {
+	return AuthenticatedHandler(LogsHandler(logger, logFile))
+}
+
 func AuthenticatedHandler(f http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		signature := req.Header.Get("signature")

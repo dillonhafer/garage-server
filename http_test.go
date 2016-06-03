@@ -340,7 +340,7 @@ TOGGLE DOOR - 2016-05-26 23:03:43.384659988 -0500 CDT`
 		log.Fatal(err)
 	}
 
-	AppVersion := AuthenticatedHandler(LogsHandler(DummyLogger, tmpfile.Name()))
+	AppVersion := CreateLogsHandler(DummyLogger, tmpfile.Name())
 	AppVersion(writer, req)
 	responseEqual(t, writer.Code, 200)
 
@@ -367,7 +367,7 @@ func TestUnverifiedSignatureOnLogs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	AppVersion := AuthenticatedHandler(LogsHandler(DummyLogger, "file"))
+	AppVersion := CreateLogsHandler(DummyLogger, "file")
 	AppVersion(writer, req)
 	responseEqual(t, writer.Code, 403)
 }
@@ -383,7 +383,7 @@ func TestExpiredTimestampOnLogs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	AppVersion := AuthenticatedHandler(LogsHandler(DummyLogger, "file"))
+	AppVersion := CreateLogsHandler(DummyLogger, "file")
 	AppVersion(writer, req)
 	responseEqual(t, writer.Code, 403)
 }

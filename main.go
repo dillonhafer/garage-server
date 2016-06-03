@@ -61,7 +61,7 @@ func main() {
 	Relay := CreateRelayHandle(ToggleSwitch, apiLogHandler, options.pinNumber, options.sleepTimeout)
 	Status := CreateDoorStatusHandler(CheckDoorStatus, apiLogHandler, options.statusPinNumber)
 	AppVersion := CreateVersionHandler(apiLogHandler)
-	Logs := AuthenticatedHandler(LogsHandler(apiLogHandler, options.log))
+	Logs := CreateLogsHandler(apiLogHandler, options.log)
 
 	http.HandleFunc("/toggle", Relay)
 	http.HandleFunc("/status", Status)
