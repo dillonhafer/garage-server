@@ -1,8 +1,9 @@
-package main
+package door
 
 import (
-	"github.com/stianeikeland/go-rpio"
 	"time"
+
+	"github.com/stianeikeland/go-rpio"
 )
 
 func CheckDoorStatus(pinNumber int) (state string, err error) {

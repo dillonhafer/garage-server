@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+
+	"github.com/dillonhafer/garage-server/door"
 )
 
 const Version = "6.0.0"
@@ -58,8 +60,8 @@ func main() {
 		serveAddress = options.http
 	}
 
-	Relay := CreateRelayHandle(ToggleSwitch, apiLogHandler, options.pinNumber, options.sleepTimeout)
-	Status := CreateDoorStatusHandler(CheckDoorStatus, apiLogHandler, options.statusPinNumber)
+	Relay := CreateRelayHandle(door.ToggleSwitch, apiLogHandler, options.pinNumber, options.sleepTimeout)
+	Status := CreateDoorStatusHandler(door.CheckDoorStatus, apiLogHandler, options.statusPinNumber)
 	AppVersion := CreateVersionHandler(apiLogHandler)
 	Logs := CreateLogsHandler(apiLogHandler, options.log)
 
