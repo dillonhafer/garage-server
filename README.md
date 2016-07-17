@@ -153,4 +153,4 @@ You can keep your server automatically up-to-date with cron:
 
   For more information, please refer to <http://unlicense.org>
 
-#### This software uses stianeikeland/go-rpio - see stianeikeland-go-rpio-license.txt
+### This software uses 3rd-party software - see 3rd-party-licenses for their respective licenses
