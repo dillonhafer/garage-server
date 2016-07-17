@@ -126,6 +126,6 @@ You can keep your server automatically up-to-date with cron:
 @daily /usr/sbin/service garage-server update && /usr/sbin/service garage-server restart
 ```
 
-## This work is dedicated to the public domain. See UNLICENSE
+**This software is dedicated to the public domain. See UNLICENSE**
 
 **This software uses 3rd-party software - see 3rd-party-licenses for their respective licenses**
